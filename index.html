@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Lorefall TCG: Card Engine</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -15,13 +15,18 @@
     select[multiple]::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
     select[multiple] option:checked { background: #d97706 linear-gradient(0deg, #d97706 0%, #d97706 100%); color: white; }
     
-    /* Mobile scrollbar hiding */
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* Dynamic viewport container */
+    .viewport-shell {
+      height: 100vh;
+      height: 100dvh;
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden">
-  <div id="root" class="h-screen w-screen flex flex-col"></div>
+  <div id="root" class="viewport-shell w-screen flex flex-col"></div>
 
   <script type="text/babel">
     const { useState, useMemo, useEffect } = React;
@@ -102,7 +107,7 @@
       const [modalCard, setModalCard] = useState(null);
       const [showStatsModal, setShowStatsModal] = useState(false);
       const [notification, setNotification] = useState(null);
-      const [mobileDeckView, setMobileDeckView] = useState(false); // Mobile Toggle State
+      const [mobileDeckView, setMobileDeckView] = useState(false);
 
       const [searchTerm, setSearchTerm] = useState('');
       const [filterCost, setFilterCost] = useState('');
@@ -138,7 +143,7 @@
       }, [supabaseUrl, supabaseKey]);
 
       const [savedDecks, setSavedDecks] = useState(() => {
-        const saved = localStorage.getItem('lorefall_saved_decks_v26');
+        const saved = localStorage.getItem('lorefall_saved_decks_v27');
         return saved ? JSON.parse(saved) : {};
       });
       const [selectedSavedDeck, setSelectedSavedDeck] = useState(null);
@@ -260,7 +265,7 @@
       };
 
       const [cards, setCards] = useState(() => {
-        const saved = localStorage.getItem('lorefall_cards_v26');
+        const saved = localStorage.getItem('lorefall_cards_v27');
         if (saved) { try { return JSON.parse(saved); } catch(e) {} }
         let flat = [];
         Object.entries(INITIAL_DATABASE).forEach(([type, list]) => {
@@ -272,18 +277,18 @@
         return flat;
       });
 
-      const [selectedHeroId, setSelectedHeroId] = useState(() => localStorage.getItem('lorefall_hero_v26') || '');
+      const [selectedHeroId, setSelectedHeroId] = useState(() => localStorage.getItem('lorefall_hero_v27') || '');
       const [deck, setDeck] = useState(() => {
-        const saved = localStorage.getItem('lorefall_deck_v26');
+        const saved = localStorage.getItem('lorefall_deck_v27');
         return saved ? JSON.parse(saved) : {};
       });
 
-      useEffect(() => { localStorage.setItem('lorefall_cards_v26', JSON.stringify(cards)); }, [cards]);
+      useEffect(() => { localStorage.setItem('lorefall_cards_v27', JSON.stringify(cards)); }, [cards]);
       useEffect(() => {
-        localStorage.setItem('lorefall_deck_v26', JSON.stringify(deck));
-        localStorage.setItem('lorefall_hero_v26', selectedHeroId);
+        localStorage.setItem('lorefall_deck_v27', JSON.stringify(deck));
+        localStorage.setItem('lorefall_hero_v27', selectedHeroId);
       }, [deck, selectedHeroId]);
-      useEffect(() => { localStorage.setItem('lorefall_saved_decks_v26', JSON.stringify(savedDecks)); }, [savedDecks]);
+      useEffect(() => { localStorage.setItem('lorefall_saved_decks_v27', JSON.stringify(savedDecks)); }, [savedDecks]);
 
       const triggerToast = (msg, isError = true) => {
         setNotification({ text: msg, isError });
@@ -575,35 +580,35 @@
         <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden">
           
           {/* RESPONSIVE HEADER */}
-          <header className="px-4 py-3 md:h-16 md:px-6 md:py-0 bg-slate-900 border-b border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between shrink-0 z-10 relative gap-3 md:gap-0">
+          <header className="px-3 py-2.5 md:h-16 md:px-6 md:py-0 bg-slate-900 border-b border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between shrink-0 z-10 relative gap-2 md:gap-0">
             <div className="flex items-center justify-between w-full md:w-auto">
               <div className="flex items-center gap-2 md:gap-3">
-                <span className="w-8 h-8 rounded bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center border border-amber-500/30">LF</span>
-                <h1 className="text-base md:text-lg font-bold tracking-wide">Lorefall Engine</h1>
+                <span className="w-7 h-7 md:w-8 md:h-8 rounded bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center border border-amber-500/30 text-xs md:text-sm">LF</span>
+                <h1 className="text-sm md:text-lg font-bold tracking-wide">Lorefall Engine</h1>
               </div>
             </div>
             <div className="flex items-center gap-2 md:gap-3 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-hide">
-              <button onClick={() => setShowCloudModal(true)} className={`shrink-0 px-3 py-1.5 rounded-md text-xs font-semibold transition border flex items-center gap-1.5 ${supabase ? 'bg-sky-950/60 border-sky-800 text-sky-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'}`}>
+              <button onClick={() => setShowCloudModal(true)} className={`shrink-0 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs font-semibold transition border flex items-center gap-1 ${supabase ? 'bg-sky-950/60 border-sky-800 text-sky-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'}`}>
                 <span>☁️</span>
                 <span>{supabase ? (isSyncing ? 'Syncing...' : 'Cloud Connected') : 'Setup Cloud DB'}</span>
               </button>
               {currentUser ? (
-                <button onClick={handleLogout} className="shrink-0 px-3 py-1.5 rounded-md text-xs font-semibold transition border bg-slate-800 text-amber-400 border-slate-700 hover:text-rose-400 flex items-center gap-1.5" title="Click to logout">
+                <button onClick={handleLogout} className="shrink-0 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs font-semibold transition border bg-slate-800 text-amber-400 border-slate-700 hover:text-rose-400 flex items-center gap-1" title="Click to logout">
                   <span>👤</span><span>{currentUser} (Log out)</span>
                 </button>
               ) : (
-                <button onClick={() => { setAuthError(''); setShowAuthModal(true); }} className="shrink-0 px-3 py-1.5 rounded-md text-xs font-semibold transition border bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200 flex items-center gap-1.5">
+                <button onClick={() => { setAuthError(''); setShowAuthModal(true); }} className="shrink-0 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs font-semibold transition border bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200 flex items-center gap-1">
                   <span>👤</span><span>Login / Register</span>
                 </button>
               )}
-              <button onClick={handleEnableEdit} className={`shrink-0 px-3 py-1.5 rounded-md text-xs font-semibold transition border ${editMode ? 'bg-amber-600/20 text-amber-500 border-amber-600 shadow-[0_0_15px_rgba(217,119,6,0.3)] hover:bg-amber-600/30' : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'}`}>
+              <button onClick={handleEnableEdit} className={`shrink-0 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs font-semibold transition border ${editMode ? 'bg-amber-600/20 text-amber-500 border-amber-600 shadow-[0_0_15px_rgba(217,119,6,0.3)] hover:bg-amber-600/30' : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'}`}>
                 {editMode ? '✓ Edit Active' : '🔓 Edit Mode'}
               </button>
-              <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700 shrink-0 ml-1">
-                <button onClick={() => setView('deck-builder')} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${view === 'deck-builder' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Deck Builder</button>
-                <button onClick={() => setView('saved-decks')} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${view === 'saved-decks' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Saved Decks</button>
-                <button onClick={() => setView('card-forge')} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${view === 'card-forge' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Card Forge</button>
-                <button onClick={() => setView('database')} className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${view === 'database' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Database</button>
+              <div className="flex bg-slate-800 rounded-lg p-0.5 md:p-1 border border-slate-700 shrink-0 ml-1">
+                <button onClick={() => setView('deck-builder')} className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs font-semibold transition ${view === 'deck-builder' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Deck Builder</button>
+                <button onClick={() => setView('saved-decks')} className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs font-semibold transition ${view === 'saved-decks' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Saved Decks</button>
+                <button onClick={() => setView('card-forge')} className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs font-semibold transition ${view === 'card-forge' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Card Forge</button>
+                <button onClick={() => setView('database')} className={`px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs font-semibold transition ${view === 'database' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Database</button>
               </div>
             </div>
           </header>
@@ -622,16 +627,16 @@
                 
                 {/* 1. Main Card Pool */}
                 <div className={`flex-1 flex-col min-h-0 md:border-r border-slate-800 bg-slate-900/50 ${mobileDeckView ? 'hidden md:flex' : 'flex'}`}>
-                  <div className="p-4 md:p-6 pb-2 shrink-0 overflow-y-auto max-h-[40%]">
-                    <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl p-4 mb-4 shadow-sm">
-                      <h2 className="text-xs uppercase font-bold tracking-wider text-slate-400 mb-2">1. Select Your Hero</h2>
-                      <select value={selectedHeroId} onChange={(e) => handleHeroChange(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-amber-500">
+                  <div className="p-3 md:p-6 pb-2 shrink-0 overflow-y-auto max-h-[35%] md:max-h-[40%]">
+                    <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 md:p-4 mb-3 shadow-sm">
+                      <h2 className="text-[10px] md:text-xs uppercase font-bold tracking-wider text-slate-400 mb-1.5">1. Select Your Hero</h2>
+                      <select value={selectedHeroId} onChange={(e) => handleHeroChange(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-200 focus:outline-none focus:border-amber-500">
                         <option value="">-- Choose a Hero --</option>
                         {cards.filter(c => c._type === 'Hero').map(h => <option key={h._id} value={h._id}>{h["Hero Name"]} ({h.Faction} • {h.Class})</option>)}
                       </select>
                       {selectedHero && (
-                        <div className="mt-3 pt-3 border-t border-slate-700/60">
-                            <div className="flex flex-wrap gap-4 text-xs text-slate-300 mb-3">
+                        <div className="mt-2.5 pt-2.5 border-t border-slate-700/60">
+                            <div className="flex flex-wrap gap-3 text-xs text-slate-300 mb-2">
                                 <div><span className="text-slate-400">Faction:</span> <strong className="text-amber-400">{selectedHero.Faction}</strong></div>
                                 <div><span className="text-slate-400">Class:</span> <strong className="text-amber-400">{selectedHero.Class}</strong></div>
                             </div>
@@ -640,22 +645,22 @@
                       )}
                     </div>
                     
-                    {/* Filters - Scrollable horizontally on mobile */}
-                    <div className="flex gap-2 items-center mb-2 overflow-x-auto pb-2 scrollbar-hide w-full">
-                      <input type="text" placeholder="Search text..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="shrink-0 w-32 md:flex-1 md:w-auto bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 placeholder-slate-500" />
-                      <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="shrink-0 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                    {/* Filters - Fluid horizontal panning */}
+                    <div className="flex gap-2 items-center mb-1 overflow-x-auto pb-2 scrollbar-hide w-full">
+                      <input type="text" placeholder="Search text..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="shrink-0 w-28 md:w-auto md:flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500 placeholder-slate-500" />
+                      <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="shrink-0 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
                         <option value="All">All Types</option><option value="Ally">Ally</option><option value="Skill">Skill</option><option value="Equipment">Equipment</option><option value="Flash">Flash</option><option value="Synergy">Synergy</option>
                       </select>
-                      <select value={filterFaction} onChange={(e) => setFilterFaction(e.target.value)} className="shrink-0 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                      <select value={filterFaction} onChange={(e) => setFilterFaction(e.target.value)} className="shrink-0 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
                         <option value="All">All Factions</option>
                         {FIELD_TYPES["Faction"].options.map(f => <option key={f} value={f}>{f}</option>)}
                       </select>
-                      <input type="number" placeholder="Cost" value={filterCost} onChange={(e) => setFilterCost(e.target.value)} className="shrink-0 w-16 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500 placeholder-slate-500" />
+                      <input type="number" placeholder="Cost" value={filterCost} onChange={(e) => setFilterCost(e.target.value)} className="shrink-0 w-14 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500 placeholder-slate-500" />
                       <div className="shrink-0 flex items-center gap-0 bg-slate-900 border border-slate-700 rounded overflow-hidden">
-                          <select value={filterStatType} onChange={(e) => setFilterStatType(e.target.value)} className="bg-transparent text-xs text-slate-200 focus:outline-none py-1.5 px-2 border-r border-slate-700">
+                          <select value={filterStatType} onChange={(e) => setFilterStatType(e.target.value)} className="bg-transparent text-xs text-slate-200 focus:outline-none py-1 px-1.5 border-r border-slate-700">
                               <option value="">Stat...</option><option value="Power">Power</option><option value="Dexterity">Dexterity</option><option value="Health">Health</option>
                           </select>
-                          <input type="number" placeholder="Val" value={filterStatValue} onChange={(e) => setFilterStatValue(e.target.value)} className="w-[50px] bg-transparent text-xs text-slate-200 focus:outline-none py-1.5 px-2 placeholder-slate-500" />
+                          <input type="number" placeholder="Val" value={filterStatValue} onChange={(e) => setFilterStatValue(e.target.value)} className="w-[45px] bg-transparent text-xs text-slate-200 focus:outline-none py-1 px-1.5 placeholder-slate-500" />
                       </div>
                       {(searchTerm || filterCost !== '' || filterType !== 'All' || filterFaction !== 'All' || filterStatType !== '' || filterStatValue !== '') && (
                         <button onClick={() => { setSearchTerm(''); setFilterCost(''); setFilterType('All'); setFilterFaction('All'); setFilterStatType(''); setFilterStatValue(''); }} className="shrink-0 text-[10px] uppercase font-bold text-amber-500 hover:text-amber-400 tracking-wider ml-1">Clear</button>
@@ -663,15 +668,16 @@
                     </div>
                   </div>
                   
-                  <div className="flex-1 overflow-y-auto px-4 md:px-6 pb-24 md:pb-6 min-h-0">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                  {/* Dynamic Single-Column on Mobile, Multi-Column on Larger Screens */}
+                  <div className="flex-1 overflow-y-auto px-3 md:px-6 pb-24 md:pb-6 min-h-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                       {filteredPool.map(card => {
                         const cost = card["Mana Cost"] !== "" ? `${card["Mana Cost"]} Mana` : (card["Gold Cost"] !== "" ? `${card["Gold Cost"]} Gold` : null);
                         return (
-                          <div key={card._id} className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 flex flex-col justify-between hover:border-slate-600 transition h-full">
+                          <div key={card._id} className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 flex flex-col justify-between hover:border-slate-600 transition h-full shadow-sm">
                             <div className="flex-1 flex flex-col">
                               {card["Image URL"] && (
-                                <div className="w-full h-40 md:h-48 mb-3 rounded-lg bg-black/60 border border-slate-700/50 flex items-center justify-center p-2 shrink-0">
+                                <div className="w-full aspect-[4/3] sm:h-44 md:h-48 mb-2.5 rounded-lg bg-black/60 border border-slate-700/50 flex items-center justify-center p-2 shrink-0">
                                     <img src={formatImageUrl(card["Image URL"])} alt={card["Card Name"] || card["Hero Name"]} className="max-w-full max-h-full object-contain drop-shadow-md rounded" loading="lazy" />
                                 </div>
                               )}
@@ -687,7 +693,7 @@
                               </div>
                             </div>
                             <div className="mt-3 pt-2 border-t border-slate-700/40 flex items-center gap-2 shrink-0">
-                              <button onClick={() => setModalCard(card)} className="px-2.5 py-1.5 text-xs font-semibold rounded bg-slate-700 hover:bg-slate-600 text-slate-300">Stats</button>
+                              <button onClick={() => setModalCard(card)} className="px-3 py-1.5 text-xs font-semibold rounded bg-slate-700 hover:bg-slate-600 text-slate-300">Stats</button>
                               <button onClick={() => handleAddCard(card)} className="flex-1 py-1.5 text-xs font-semibold rounded bg-amber-600 hover:bg-amber-500 text-white transition">+ Add</button>
                             </div>
                           </div>
@@ -697,9 +703,9 @@
                   </div>
                 </div>
 
-                {/* 2. Deck List Sidebar (Absolute on Mobile, Relative on Desktop) */}
+                {/* 2. Deck List Sidebar (Absolute Fullscreen on Mobile, Docked on Desktop) */}
                 <div className={`w-full md:w-80 bg-slate-900 md:border-l border-slate-800 flex-col shrink-0 min-h-0 absolute md:relative inset-0 md:inset-auto z-10 ${mobileDeckView ? 'flex' : 'hidden md:flex'}`}>
-                  <div className="p-4 border-b border-slate-800 bg-slate-800/40 shrink-0 shadow-sm">
+                  <div className="p-3 md:p-4 border-b border-slate-800 bg-slate-800/40 shrink-0 shadow-sm">
                     <div className="flex justify-between items-center mb-2">
                       <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300">Main Deck</h2>
                       <span className={`text-xs px-2 py-0.5 rounded font-bold ${deckCount === MAX_DECK ? 'bg-emerald-950 border border-emerald-800 text-emerald-400' : 'bg-amber-950 border border-amber-800 text-amber-400'}`}>{deckCount} / {MAX_DECK}</span>
@@ -708,7 +714,7 @@
                       <div className={`h-full transition-all duration-300 ${deckCount === MAX_DECK ? 'bg-emerald-500' : 'bg-amber-500'}`} style={{ width: `${Math.min((deckCount / MAX_DECK) * 100, 100)}%` }} />
                     </div>
                     {deckCount === MAX_DECK && (
-                        <button onClick={handleSaveDeck} className={`w-full mt-3 py-2 text-white text-xs font-bold uppercase tracking-wider rounded transition shadow-[0_0_10px_rgba(5,150,105,0.3)] ${currentUser ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-slate-700 hover:bg-slate-600'}`}>
+                        <button onClick={handleSaveDeck} className={`w-full mt-2.5 py-2 text-white text-xs font-bold uppercase tracking-wider rounded transition shadow-[0_0_10px_rgba(5,150,105,0.3)] ${currentUser ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-slate-700 hover:bg-slate-600'}`}>
                             {currentUser ? 'Save Deck' : 'Login to Save Deck'}
                         </button>
                     )}
@@ -716,7 +722,7 @@
                         <button onClick={() => setShowStatsModal(true)} className="w-full mt-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold uppercase tracking-wider rounded transition border border-slate-700">📊 View Deck Stats</button>
                     )}
                   </div>
-                  <div className="flex-1 overflow-y-auto p-4 pb-24 md:pb-4 space-y-2 min-h-0">
+                  <div className="flex-1 overflow-y-auto p-3 md:p-4 pb-24 md:pb-4 space-y-2 min-h-0">
                     {Object.values(deck).map(({ card, count }) => (
                       <div key={card._id} className="flex justify-between items-center bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm hover:bg-slate-800/80 transition">
                         <div className="truncate mr-2 flex-1 cursor-pointer" onClick={() => setModalCard(card)}>
@@ -729,10 +735,10 @@
                   </div>
                 </div>
 
-                {/* 3. Mobile Floating Toggle Button */}
-                <div className="md:hidden absolute bottom-4 left-4 right-4 z-20">
-                    <button onClick={() => setMobileDeckView(!mobileDeckView)} className="w-full py-3.5 bg-amber-600 hover:bg-amber-500 rounded-xl font-bold text-white shadow-[0_10px_25px_-5px_rgba(217,119,6,0.5)] border border-amber-400 uppercase tracking-widest text-sm transition-transform active:scale-95">
-                        {mobileDeckView ? '🔍 Back to Card Pool' : `📋 View Deck (${deckCount}/40)`}
+                {/* 3. Floating Mobile Action Toggle */}
+                <div className="md:hidden absolute bottom-3 left-3 right-3 z-30">
+                    <button onClick={() => setMobileDeckView(!mobileDeckView)} className="w-full py-3 bg-gradient-to-r from-amber-600 to-amber-500 active:scale-98 rounded-xl font-bold text-white shadow-xl border border-amber-400 uppercase tracking-widest text-xs transition">
+                        {mobileDeckView ? '🔍 Back to Card Search' : `📋 View Active Deck (${deckCount}/40)`}
                     </button>
                 </div>
 
@@ -741,12 +747,12 @@
               
               /* VIEW: SAVED DECKS */
               <div className="flex flex-col md:flex-row flex-1 min-h-0 bg-slate-950">
-                 <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-slate-800 p-4 md:p-6 overflow-y-auto bg-slate-900/50 flex flex-col h-[40vh] md:h-auto shrink-0">
-                   <div className="flex justify-between items-center mb-4">
+                 <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-slate-800 p-4 md:p-6 overflow-y-auto bg-slate-900/50 flex flex-col h-[35vh] md:h-auto shrink-0">
+                   <div className="flex justify-between items-center mb-3">
                        <h2 className="text-lg font-bold text-slate-200 uppercase tracking-wider text-xs">Saved Decks</h2>
                    </div>
                    
-                   <div className="flex bg-slate-800/80 rounded-lg p-1 border border-slate-700 mb-4 shrink-0">
+                   <div className="flex bg-slate-800/80 rounded-lg p-1 border border-slate-700 mb-3 shrink-0">
                        <button onClick={() => setSavedDeckTab('All')} className={`flex-1 py-1.5 rounded-md text-xs font-bold transition ${savedDeckTab === 'All' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'}`}>All Decks</button>
                        <button onClick={() => {
                            if (!currentUser) return triggerToast("Please login to view your decks.", true);
@@ -754,8 +760,8 @@
                        }} className={`flex-1 py-1.5 rounded-md text-xs font-bold transition ${savedDeckTab === 'Mine' ? 'bg-amber-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>My Decks</button>
                    </div>
                    
-                   {Object.keys(savedDecks).length === 0 && <p className="text-slate-500 text-sm">No decks saved yet.</p>}
-                   <div className="space-y-3 flex-1 overflow-y-auto pr-1">
+                   {Object.keys(savedDecks).length === 0 && <p className="text-slate-500 text-xs">No decks saved yet.</p>}
+                   <div className="space-y-2.5 flex-1 overflow-y-auto pr-1">
                      {Object.entries(savedDecks)
                         .filter(([_, data]) => savedDeckTab === 'All' || data.creator === currentUser)
                         .map(([name, deckData]) => {
@@ -763,9 +769,9 @@
                         const isSelected = selectedSavedDeck === name;
                         const sDeckTotal = Object.values(deckData.cards).reduce((sum, item) => sum + item.count, 0);
                         return (
-                          <div key={name} className={`p-4 rounded-xl border cursor-pointer transition ${isSelected ? 'bg-amber-900/20 border-amber-600' : 'bg-slate-800/80 border-slate-700 hover:border-amber-500/50'}`} onClick={() => setSelectedSavedDeck(name)}>
+                          <div key={name} className={`p-3 rounded-xl border cursor-pointer transition ${isSelected ? 'bg-amber-900/20 border-amber-600' : 'bg-slate-800/80 border-slate-700 hover:border-amber-500/50'}`} onClick={() => setSelectedSavedDeck(name)}>
                             <div className="flex justify-between items-start">
-                                <h3 className="font-bold text-amber-500 text-lg leading-tight">{name}</h3>
+                                <h3 className="font-bold text-amber-500 text-base leading-tight">{name}</h3>
                                 <span className="text-[10px] bg-slate-900 border border-slate-700 px-1.5 py-0.5 rounded text-slate-400 shrink-0 ml-2">{sDeckTotal} Cards</span>
                             </div>
                             <p className="text-xs text-slate-400 mt-1">Hero: {hero ? hero["Hero Name"] : "Unknown"} <br/><span className="text-amber-500/70">By: {deckData.creator || 'Anonymous'}</span></p>
@@ -782,10 +788,10 @@
                       const sDeckTotal = Object.values(sDeck.cards).reduce((sum, item) => sum + item.count, 0);
                       return (
                         <div>
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5">
                             <div>
-                                <h2 className="text-2xl font-bold text-slate-100">{selectedSavedDeck}</h2>
-                                <p className="text-sm text-slate-400 mt-1">Total Main Deck: <strong className="text-amber-500">{sDeckTotal} / 40 Cards</strong></p>
+                                <h2 className="text-xl md:text-2xl font-bold text-slate-100">{selectedSavedDeck}</h2>
+                                <p className="text-xs md:text-sm text-slate-400 mt-0.5">Total Main Deck: <strong className="text-amber-500">{sDeckTotal} / 40 Cards</strong></p>
                             </div>
                             <div className="flex gap-2">
                               <button onClick={() => {
@@ -793,7 +799,7 @@
                                  setDeck(sDeck.cards);
                                  setView('deck-builder');
                                  triggerToast("Deck loaded into Builder!", false);
-                              }} className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-sm shadow transition">Load into Builder</button>
+                              }} className="flex-1 sm:flex-none px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs md:text-sm shadow transition">Load into Builder</button>
                               {(!sDeck.creator || sDeck.creator === currentUser) && (
                                   <button onClick={async () => {
                                      if(confirm(`Are you sure you want to delete "${selectedSavedDeck}"?`)) {
@@ -805,27 +811,27 @@
                                          await supabase.from('saved_decks').delete().eq('name', selectedSavedDeck);
                                        }
                                      }
-                                  }} className="px-4 py-2 bg-rose-900/80 hover:bg-rose-800 text-rose-200 rounded font-bold text-sm transition">Delete</button>
+                                  }} className="px-3.5 py-2 bg-rose-900/80 hover:bg-rose-800 text-rose-200 rounded font-bold text-xs md:text-sm transition">Delete</button>
                               )}
                             </div>
                           </div>
                           
                           {hero && (
-                            <div className="mb-6 p-4 bg-slate-800/80 rounded-xl border border-slate-700 flex gap-4 items-center">
-                              <div className="w-16 h-16 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-3xl shrink-0 cursor-pointer" onClick={() => setModalCard(hero)}>👑</div>
+                            <div className="mb-4 p-3 bg-slate-800/80 rounded-xl border border-slate-700 flex gap-3 items-center">
+                              <div className="w-12 h-12 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-2xl shrink-0 cursor-pointer" onClick={() => setModalCard(hero)}>👑</div>
                               <div>
-                                <h3 className="font-bold text-lg text-slate-200 cursor-pointer hover:text-amber-400 transition" onClick={() => setModalCard(hero)}>{hero["Hero Name"]}</h3>
-                                <p className="text-sm text-amber-500">{hero.Faction} • {hero.Class}</p>
+                                <h3 className="font-bold text-base text-slate-200 cursor-pointer hover:text-amber-400 transition" onClick={() => setModalCard(hero)}>{hero["Hero Name"]}</h3>
+                                <p className="text-xs text-amber-500">{hero.Faction} • {hero.Class}</p>
                               </div>
                             </div>
                           )}
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
                             {Object.values(sDeck.cards).map(({card, count}) => (
-                               <div key={card._id} className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/50 flex justify-between items-center cursor-pointer hover:border-slate-500 transition" onClick={() => setModalCard(card)}>
+                               <div key={card._id} className="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700/50 flex justify-between items-center cursor-pointer hover:border-slate-500 transition" onClick={() => setModalCard(card)}>
                                  <div className="truncate mr-2">
                                     <span className="font-bold text-amber-400 mr-2">{count}×</span>
-                                    <span className="text-sm text-slate-200">{card["Card Name"]}</span>
+                                    <span className="text-xs md:text-sm text-slate-200">{card["Card Name"]}</span>
                                  </div>
                                  <span className="text-[10px] uppercase font-bold bg-slate-900 px-1.5 py-0.5 rounded text-slate-400 border border-slate-700">{card["Card Rarity"] || "Common"}</span>
                                </div>
@@ -834,7 +840,7 @@
                         </div>
                       );
                    })() : (
-                      <div className="flex h-full items-center justify-center text-slate-500 text-center p-4">Select a deck from the list to view its contents.</div>
+                      <div className="flex h-full items-center justify-center text-slate-500 text-center p-4 text-xs">Select a deck from the list to view its contents.</div>
                    )}
                  </div>
               </div>
@@ -843,19 +849,19 @@
               /* VIEW: CARD FORGE */
               <div className="flex flex-col md:flex-row flex-1 min-h-0 bg-slate-950 overflow-hidden">
                 
-                {/* Forge Form - Bottom on Mobile, Left on Desktop */}
-                <div className="w-full md:w-1/2 border-t md:border-t-0 md:border-r border-slate-800 flex flex-col bg-slate-900/40 order-2 md:order-1 h-[60vh] md:h-auto">
-                  <div className="p-4 md:p-6 border-b border-slate-800 bg-slate-800/60 shrink-0">
-                    <h2 className="text-lg md:text-xl font-bold text-slate-100 flex items-center gap-2 mb-3 md:mb-4">⚒️ Card Forge</h2>
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {/* Forge Form */}
+                <div className="w-full md:w-1/2 border-t md:border-t-0 md:border-r border-slate-800 flex flex-col bg-slate-900/40 order-2 md:order-1 flex-1 md:flex-none md:h-auto min-h-0">
+                  <div className="p-3 md:p-6 border-b border-slate-800 bg-slate-800/60 shrink-0">
+                    <h2 className="text-base md:text-xl font-bold text-slate-100 flex items-center gap-2 mb-2 md:mb-4">⚒️ Card Forge</h2>
+                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                         {Object.keys(FORGE_LAYOUTS).map(cat => (
-                            <button key={cat} onClick={() => { setForgeCategory(cat); setForgeData({}); }} className={`shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition ${forgeCategory === cat ? 'bg-amber-600 text-white shadow-md shadow-amber-900/40' : 'bg-slate-900 text-slate-400 hover:bg-slate-700'}`}>{cat}</button>
+                            <button key={cat} onClick={() => { setForgeCategory(cat); setForgeData({}); }} className={`shrink-0 px-3 py-1 md:px-4 md:py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition ${forgeCategory === cat ? 'bg-amber-600 text-white shadow-md' : 'bg-slate-900 text-slate-400 hover:bg-slate-700'}`}>{cat}</button>
                         ))}
                     </div>
                   </div>
                   
-                  <div className="flex-1 overflow-y-auto p-4 md:p-6">
-                    <form id="forgeForm" onSubmit={handleForgeSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
+                  <div className="flex-1 overflow-y-auto p-3 md:p-6">
+                    <form id="forgeForm" onSubmit={handleForgeSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                         {FORGE_LAYOUTS[forgeCategory].filter(key => {
                             const at = forgeData["Attack Type"];
                             const flashSub = forgeData["Flash Subtype"];
@@ -932,7 +938,7 @@
                                                 </button>
                                             </div>
                                         )}
-                                        <textarea value={val} onChange={e => handleForgeChange(key, e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 min-h-[80px]" placeholder={`Enter ${key}...`} />
+                                        <textarea value={val} onChange={e => handleForgeChange(key, e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 min-h-[70px]" placeholder={`Enter ${key}...`} />
                                     </div>
                                 );
                             } else if (spec.type === 'select') {
@@ -954,7 +960,7 @@
                                             if (s.length > 3) return triggerToast(`Max 3 compatible classes allowed.`, true);
                                         }
                                         handleForgeChange(key, s.join(", ")); 
-                                    }} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 h-[100px]">
+                                    }} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 h-[90px]">
                                         {spec.options.map(o => <option key={o} value={o}>{o}</option>)}
                                     </select>
                                 );
@@ -966,51 +972,49 @@
 
                             return (
                                 <div key={key} className={`flex flex-col gap-1.5 ${spec.type === 'textarea' || key.includes('Name') ? 'md:col-span-2' : ''}`}>
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">{key}</label>
+                                    <label className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest">{key}</label>
                                     {inputElement}
                                 </div>
                             );
                         })}
                     </form>
                   </div>
-                  <div className="p-4 md:p-6 border-t border-slate-800 bg-slate-800/40 shrink-0">
+                  <div className="p-3 md:p-6 border-t border-slate-800 bg-slate-800/40 shrink-0">
                       {currentUser ? (
-                          <button type="submit" form="forgeForm" className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white font-bold uppercase tracking-widest shadow-lg shadow-amber-900/50 transition">Forge Card to Database</button>
+                          <button type="submit" form="forgeForm" className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white font-bold uppercase tracking-widest text-xs md:text-sm shadow-md transition">Forge Card to Database</button>
                       ) : (
-                          <button type="button" onClick={() => { setAuthError(''); setShowAuthModal(true); }} className="w-full py-3 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-amber-400 font-bold uppercase tracking-widest transition shadow-md">
+                          <button type="button" onClick={() => { setAuthError(''); setShowAuthModal(true); }} className="w-full py-3 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-amber-400 font-bold uppercase tracking-widest text-xs transition">
                               🔒 Login Required to Forge
                           </button>
                       )}
                   </div>
                 </div>
                 
-                {/* Forge Preview - Top on Mobile, Right on Desktop */}
-                <div className="w-full md:w-1/2 p-4 md:p-10 flex items-center justify-center bg-slate-950 relative overflow-y-auto order-1 md:order-2 h-[40vh] md:h-auto shrink-0">
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-800/40 via-slate-950 to-slate-950 hidden md:block"></div>
-                    
-                    <div className="w-full max-w-sm relative z-10 bg-slate-800 border border-slate-600 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+                {/* Live Preview */}
+                <div className="w-full md:w-1/2 p-3 md:p-10 flex items-center justify-center bg-slate-950 relative overflow-y-auto order-1 md:order-2 max-h-[35vh] md:max-h-none shrink-0 border-b md:border-b-0 border-slate-800">
+                    <div className="w-full max-w-xs md:max-w-sm relative z-10 bg-slate-800 border border-slate-600 rounded-2xl shadow-xl flex flex-col overflow-hidden">
                         {forgeData["Image URL"] ? (
-                            <div className="w-full h-40 md:h-64 bg-black flex items-center justify-center border-b border-slate-700 p-2">
+                            <div className="w-full h-32 md:h-64 bg-black flex items-center justify-center border-b border-slate-700 p-2">
                                 <img src={formatImageUrl(forgeData["Image URL"])} className="max-w-full max-h-full object-contain drop-shadow-md rounded-lg" />
                             </div>
                         ) : (
-                            <div className="w-full h-24 md:h-48 bg-slate-900 flex items-center justify-center border-b border-slate-700 text-slate-600 font-bold text-sm uppercase tracking-widest">
+                            <div className="w-full h-20 md:h-44 bg-slate-900 flex items-center justify-center border-b border-slate-700 text-slate-600 font-bold text-xs uppercase tracking-widest">
                                 No Artwork
                             </div>
                         )}
-                        <div className="p-4 md:p-5">
-                            <div className="flex justify-between items-start mb-2">
-                                <h3 className="text-xl md:text-2xl font-bold text-slate-100 leading-tight">{forgeData["Card Name"] || forgeData["Hero Name"] || "Unnamed Card"}</h3>
-                                {forgeData["Card Rarity"] && <span className="text-[10px] bg-slate-950 border border-slate-700 px-2 py-1 rounded text-slate-300 font-bold uppercase tracking-wider">{forgeData["Card Rarity"]}</span>}
+                        <div className="p-3 md:p-5">
+                            <div className="flex justify-between items-start mb-1.5">
+                                <h3 className="text-base md:text-2xl font-bold text-slate-100 leading-tight">{forgeData["Card Name"] || forgeData["Hero Name"] || "Unnamed Card"}</h3>
+                                {forgeData["Card Rarity"] && <span className="text-[10px] bg-slate-950 border border-slate-700 px-2 py-0.5 rounded text-slate-300 font-bold uppercase tracking-wider">{forgeData["Card Rarity"]}</span>}
                             </div>
-                            <div className="text-xs md:text-sm font-semibold text-amber-500 mb-4">{forgeCategory} {forgeData["Mana Cost"] !== undefined && forgeData["Mana Cost"] !== "" ? `• ${forgeData["Mana Cost"]} Mana` : ''}{forgeData["Gold Cost"] !== undefined && forgeData["Gold Cost"] !== "" ? `• ${forgeData["Gold Cost"]} Gold` : ''}</div>
+                            <div className="text-xs md:text-sm font-semibold text-amber-500 mb-3">{forgeCategory} {forgeData["Mana Cost"] !== undefined && forgeData["Mana Cost"] !== "" ? `• ${forgeData["Mana Cost"]} Mana` : ''}{forgeData["Gold Cost"] !== undefined && forgeData["Gold Cost"] !== "" ? `• ${forgeData["Gold Cost"]} Gold` : ''}</div>
                             
-                            <div className="space-y-1 md:space-y-1.5 text-xs md:text-sm text-slate-300">
+                            <div className="space-y-1 text-xs text-slate-300">
                                 {forgeData.Faction && <div><span className="text-slate-500">Faction:</span> {forgeData.Faction}</div>}
                                 {forgeData.Class && <div><span className="text-slate-500">Class:</span> {forgeData.Class}</div>}
                                 {forgeData["Compatible Classes"] && <div><span className="text-slate-500">Compatible:</span> {forgeData["Compatible Classes"]}</div>}
                                 
-                                <div className="flex flex-wrap gap-2 md:gap-4 pt-2">
+                                <div className="flex flex-wrap gap-2 md:gap-4 pt-1.5">
                                     {forgeData.Attack && <div><span className="text-slate-500">ATK:</span> {forgeData.Attack} {forgeData["Attack Type"] ? `(${forgeData["Attack Type"]})` : ''}</div>}
                                     {forgeData.Power !== undefined && forgeData.Power !== "" && forgeData.Attack !== "None" && <div><span className="text-slate-500">PWR:</span> {forgeData.Power}</div>}
                                     {forgeData["Power Modifier"] !== undefined && forgeData["Power Modifier"] !== "" && forgeData.Attack === "None" && <div><span className="text-slate-500">PWR MOD:</span> {forgeData["Power Modifier"] > 0 ? '+' : ''}{forgeData["Power Modifier"]}</div>}
@@ -1020,7 +1024,7 @@
                             </div>
                             
                             {forgeData.Abilities && (
-                                <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-slate-700 text-xs md:text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
+                                <div className="mt-2.5 pt-2.5 border-t border-slate-700 text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">
                                     {renderAbilityText(forgeData.Abilities)}
                                 </div>
                             )}
@@ -1032,9 +1036,9 @@
 
               /* VIEW: DATABASE */
               <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-950 relative">
-                <div className="h-12 border-b border-slate-800 px-4 md:px-6 flex items-center gap-2 bg-slate-900 shrink-0 overflow-x-auto scrollbar-hide">
+                <div className="h-10 md:h-12 border-b border-slate-800 px-3 md:px-6 flex items-center gap-2 bg-slate-900 shrink-0 overflow-x-auto scrollbar-hide">
                   {['All', 'Hero', 'Ally', 'Skill', 'Flash', 'Equipment', 'Synergy'].map(tab => (
-                    <button key={tab} onClick={() => setActiveTab(tab)} className={`shrink-0 px-4 py-1.5 rounded-md text-xs font-semibold transition ${activeTab === tab ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800'}`}>{tab}</button>
+                    <button key={tab} onClick={() => setActiveTab(tab)} className={`shrink-0 px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-semibold transition ${activeTab === tab ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800'}`}>{tab}</button>
                   ))}
                 </div>
                 <div className="flex-1 overflow-auto bg-slate-900/30 w-full relative">
@@ -1125,56 +1129,55 @@
           {/* DECK STATS MODAL */}
           {showStatsModal && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 z-50">
-              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl p-0 max-h-[95vh] md:max-h-[90vh] flex flex-col shadow-2xl">
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl p-0 max-h-[90dvh] flex flex-col shadow-2xl">
                 <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-800 flex justify-between items-start bg-slate-800/40 rounded-t-2xl shrink-0">
                   <div>
-                    <h3 className="text-lg md:text-xl font-bold text-slate-100">Deck Statistics</h3>
+                    <h3 className="text-base md:text-xl font-bold text-slate-100">Deck Statistics</h3>
                     <p className="text-xs md:text-sm text-slate-400 font-semibold mt-0.5">Based on {deckAnalytics.cardCount} cards in deck.</p>
                   </div>
                   <button onClick={() => setShowStatsModal(false)} className="text-slate-400 hover:text-white font-bold text-xl p-1 leading-none rounded hover:bg-slate-700 transition">✕</button>
                 </div>
                 
                 <div className="p-4 md:p-6 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
-                    
                     <div className="col-span-1 md:col-span-2 bg-slate-800/50 p-4 md:p-5 rounded-xl border border-slate-700/50 shadow-inner">
-                        <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-4 border-b border-slate-700 pb-2">Cost Sustainability</h4>
-                        <div className="flex flex-col sm:flex-row gap-4 md:gap-6 items-center justify-around mb-4">
+                        <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-3 border-b border-slate-700 pb-1.5">Cost Sustainability</h4>
+                        <div className="flex flex-col sm:flex-row gap-4 md:gap-6 items-center justify-around mb-3">
                             <div className="text-center">
-                                <div className="text-3xl font-black text-amber-500">{deckAnalytics.manaIntake}</div>
+                                <div className="text-2xl md:text-3xl font-black text-amber-500">{deckAnalytics.manaIntake}</div>
                                 <div className="text-xs text-slate-400 uppercase font-bold mt-1">Hero Mana Intake</div>
                             </div>
-                            <div className="text-xl text-slate-600 font-black">VS</div>
+                            <div className="text-lg text-slate-600 font-black">VS</div>
                             <div className="text-center">
-                                <div className="text-3xl font-black text-blue-400">{deckAnalytics.avgManaCost}</div>
+                                <div className="text-2xl md:text-3xl font-black text-blue-400">{deckAnalytics.avgManaCost}</div>
                                 <div className="text-xs text-slate-400 uppercase font-bold mt-1">Avg Cost per Card</div>
                             </div>
                         </div>
-                        <div className={`text-center font-semibold text-xs md:text-sm ${deckAnalytics.sustainColor} bg-slate-900 py-3 px-4 rounded-lg border border-slate-800/50`}>
+                        <div className={`text-center font-semibold text-xs md:text-sm ${deckAnalytics.sustainColor} bg-slate-900 py-2.5 px-3 rounded-lg border border-slate-800/50`}>
                             {deckAnalytics.sustainText}
                         </div>
                     </div>
 
                     <div className="bg-slate-800/30 p-4 md:p-5 rounded-xl border border-slate-800">
-                        <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-4 border-b border-slate-700 pb-2">Ally Averages</h4>
-                        <div className="space-y-4">
+                        <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-3 border-b border-slate-700 pb-1.5">Ally Averages</h4>
+                        <div className="space-y-3">
                             <div className="flex justify-between items-center">
                                 <span className="text-xs md:text-sm font-semibold text-slate-300">Average Power:</span>
-                                <span className="text-base md:text-lg font-bold text-rose-400">{deckAnalytics.avgPower}</span>
+                                <span className="text-sm md:text-lg font-bold text-rose-400">{deckAnalytics.avgPower}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-xs md:text-sm font-semibold text-slate-300">Average Dexterity:</span>
-                                <span className="text-base md:text-lg font-bold text-emerald-400">{deckAnalytics.avgDex}</span>
+                                <span className="text-sm md:text-lg font-bold text-emerald-400">{deckAnalytics.avgDex}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-xs md:text-sm font-semibold text-slate-300">Average Health:</span>
-                                <span className="text-base md:text-lg font-bold text-amber-400">{deckAnalytics.avgHealth}</span>
+                                <span className="text-sm md:text-lg font-bold text-amber-400">{deckAnalytics.avgHealth}</span>
                             </div>
                         </div>
                     </div>
 
                     <div className="bg-slate-800/30 p-4 md:p-5 rounded-xl border border-slate-800">
-                        <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-4 border-b border-slate-700 pb-2">Mana / Charge Curve</h4>
-                        <div className="pt-2">
+                        <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-3 border-b border-slate-700 pb-1.5">Mana / Charge Curve</h4>
+                        <div className="pt-1">
                             {Object.entries(deckAnalytics.curve).map(([label, val]) => (
                                 <BarChartRow key={label} label={label} value={val} max={deckAnalytics.maxCurve} color="bg-blue-500" />
                             ))}
@@ -1182,14 +1185,13 @@
                     </div>
 
                     <div className="col-span-1 md:col-span-2 bg-slate-800/30 p-4 md:p-5 rounded-xl border border-slate-800">
-                        <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-4 border-b border-slate-700 pb-2">Deck Composition</h4>
-                        <div className="pt-2 grid grid-cols-1 md:grid-cols-2 gap-x-8">
+                        <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-3 border-b border-slate-700 pb-1.5">Deck Composition</h4>
+                        <div className="pt-1 grid grid-cols-1 md:grid-cols-2 gap-x-8">
                             {Object.entries(deckAnalytics.types).map(([label, val]) => (
                                 <BarChartRow key={label} label={label} value={val} max={deckAnalytics.maxType} color="bg-amber-500" />
                             ))}
                         </div>
                     </div>
-
                 </div>
               </div>
             </div>
@@ -1198,18 +1200,17 @@
           {/* SINGLE CARD MODAL */}
           {modalCard && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 z-[70]">
-              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl p-0 max-h-[95vh] flex flex-col sm:flex-row shadow-2xl overflow-hidden">
-                
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl p-0 max-h-[90dvh] flex flex-col sm:flex-row shadow-2xl overflow-hidden">
                 {modalCard["Image URL"] && (
-                    <div className="w-full sm:w-1/2 h-[30vh] sm:min-h-[400px] bg-black/80 border-b sm:border-b-0 sm:border-r border-slate-800 flex items-center justify-center p-4 md:p-6 shrink-0">
+                    <div className="w-full sm:w-1/2 h-[30dvh] sm:min-h-[400px] bg-black/80 border-b sm:border-b-0 sm:border-r border-slate-800 flex items-center justify-center p-4 md:p-6 shrink-0">
                         <img src={formatImageUrl(modalCard["Image URL"])} className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-xl" />
                     </div>
                 )}
                 
-                <div className="flex-1 flex flex-col min-w-0 max-h-[65vh] sm:max-h-[90vh]">
+                <div className="flex-1 flex flex-col min-w-0 max-h-[60dvh] sm:max-h-[90dvh]">
                   <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-800 flex justify-between items-start bg-slate-800/40 shrink-0">
                     <div>
-                      <h3 className="text-lg md:text-xl font-bold text-slate-100">{modalCard["Card Name"] || modalCard["Hero Name"]}</h3>
+                      <h3 className="text-base md:text-xl font-bold text-slate-100">{modalCard["Card Name"] || modalCard["Hero Name"]}</h3>
                       <p className="text-xs md:text-sm text-amber-500 font-semibold mt-0.5">{modalCard._type} • {modalCard["Card Rarity"] || "Common"}</p>
                     </div>
                     <button onClick={() => setModalCard(null)} className="text-slate-400 hover:text-white font-bold text-xl p-1 leading-none rounded hover:bg-slate-700 transition">✕</button>
@@ -1223,8 +1224,8 @@
                     {Object.entries(modalCard).map(([key, val]) => {
                       if (key.startsWith('_') || val === "" || val === null || val === undefined || key === "Image URL") return null;
                       return (
-                        <div key={key} className="pt-3 flex flex-col sm:flex-row sm:justify-between sm:gap-6 gap-1">
-                          <span className="text-slate-500 font-medium shrink-0 uppercase tracking-wider text-[10px] sm:text-xs sm:mt-1">{key}</span>
+                        <div key={key} className="pt-2.5 flex flex-col sm:flex-row sm:justify-between sm:gap-6 gap-1">
+                          <span className="text-slate-500 font-medium shrink-0 uppercase tracking-wider text-[10px] sm:text-xs sm:mt-0.5">{key}</span>
                           <span className="text-left sm:text-right text-slate-200 break-words whitespace-pre-wrap flex-1 leading-relaxed">
                               {key === 'Abilities' ? renderAbilityText(val) : String(val)}
                           </span>
@@ -1237,29 +1238,29 @@
             </div>
           )}
 
-          {/* USER AUTH MODAL (USERNAME + PIN) */}
+          {/* USER AUTH MODAL */}
           {showAuthModal && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[90]">
-              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">👤 Profile Login / Register</h3>
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-5 shadow-2xl">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">👤 Profile Login / Register</h3>
                   <button onClick={() => setShowAuthModal(false)} className="text-slate-400 hover:text-white font-bold text-lg">✕</button>
                 </div>
-                <p className="text-xs text-slate-400 mb-4 leading-relaxed">
+                <p className="text-xs text-slate-400 mb-3 leading-relaxed">
                   Enter your username and a private PIN. If this is your first time using this name, your PIN will be saved to secure your account.
                 </p>
                 {authError && (
-                    <div className="mb-4 p-2.5 rounded bg-rose-950/80 border border-rose-800 text-rose-300 text-xs font-semibold">
+                    <div className="mb-3 p-2 rounded bg-rose-950/80 border border-rose-800 text-rose-300 text-xs font-semibold">
                         {authError}
                     </div>
                 )}
-                <form onSubmit={handleAuthSubmit} className="space-y-4">
+                <form onSubmit={handleAuthSubmit} className="space-y-3">
                   <div>
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Username</label>
+                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Username</label>
                     <input type="text" value={authUsername} onChange={e => setAuthUsername(e.target.value)} placeholder="e.g. Gavin" className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500" required />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Secret PIN / Passcode</label>
+                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Secret PIN / Passcode</label>
                     <input type="password" value={authPin} onChange={e => setAuthPin(e.target.value)} placeholder="e.g. 1234" className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500" required />
                   </div>
                   <button type="submit" className="w-full py-2.5 bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition shadow-md">
@@ -1270,31 +1271,31 @@
             </div>
           )}
 
-          {/* CLOUD DB CONFIG MODAL */}
+          {/* CLOUD CONFIG MODAL */}
           {showCloudModal && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[80]">
-              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">☁️ Supabase Cloud Config</h3>
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-5 shadow-2xl">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">☁️ Supabase Cloud Config</h3>
                   <button onClick={() => setShowCloudModal(false)} className="text-slate-400 hover:text-white font-bold text-lg">✕</button>
                 </div>
-                <p className="text-xs text-slate-400 mb-4 leading-relaxed">
+                <p className="text-xs text-slate-400 mb-3 leading-relaxed">
                   Enter your free Supabase credentials to enable global real-time synchronization of cards, decks, and user profiles across all devices.
                 </p>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Project URL</label>
+                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Project URL</label>
                     <input type="text" id="sb_url_input" defaultValue={supabaseUrl} placeholder="https://xyzcompany.supabase.co" className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500" />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Anon / Public Key</label>
+                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Anon / Public Key</label>
                     <input type="password" id="sb_key_input" defaultValue={supabaseKey} placeholder="eyJh..." className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500" />
                   </div>
                   <button onClick={() => {
                     const u = document.getElementById('sb_url_input').value;
                     const k = document.getElementById('sb_key_input').value;
                     handleSaveCloudConfig(u, k);
-                  }} className="w-full py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition shadow-md">Connect & Sync</button>
+                  }} className="w-full py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition shadow-md">Connect & Sync</button>
                 </div>
               </div>
             </div>
