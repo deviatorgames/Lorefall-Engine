@@ -18,15 +18,17 @@
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-    /* Dynamic viewport container */
+    /* Dynamic viewport container locked to screen */
     .viewport-shell {
       height: 100vh;
       height: 100dvh;
+      width: 100%;
+      max-width: 100%;
     }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden">
-  <div id="root" class="viewport-shell w-screen flex flex-col"></div>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden fixed inset-0 w-full h-full">
+  <div id="root" class="viewport-shell flex flex-col min-w-0 overflow-hidden"></div>
 
   <script type="text/babel">
     const { useState, useMemo, useEffect } = React;
@@ -143,7 +145,7 @@
       }, [supabaseUrl, supabaseKey]);
 
       const [savedDecks, setSavedDecks] = useState(() => {
-        const saved = localStorage.getItem('lorefall_saved_decks_v27');
+        const saved = localStorage.getItem('lorefall_saved_decks_v28');
         return saved ? JSON.parse(saved) : {};
       });
       const [selectedSavedDeck, setSelectedSavedDeck] = useState(null);
@@ -265,7 +267,7 @@
       };
 
       const [cards, setCards] = useState(() => {
-        const saved = localStorage.getItem('lorefall_cards_v27');
+        const saved = localStorage.getItem('lorefall_cards_v28');
         if (saved) { try { return JSON.parse(saved); } catch(e) {} }
         let flat = [];
         Object.entries(INITIAL_DATABASE).forEach(([type, list]) => {
@@ -277,18 +279,18 @@
         return flat;
       });
 
-      const [selectedHeroId, setSelectedHeroId] = useState(() => localStorage.getItem('lorefall_hero_v27') || '');
+      const [selectedHeroId, setSelectedHeroId] = useState(() => localStorage.getItem('lorefall_hero_v28') || '');
       const [deck, setDeck] = useState(() => {
-        const saved = localStorage.getItem('lorefall_deck_v27');
+        const saved = localStorage.getItem('lorefall_deck_v28');
         return saved ? JSON.parse(saved) : {};
       });
 
-      useEffect(() => { localStorage.setItem('lorefall_cards_v27', JSON.stringify(cards)); }, [cards]);
+      useEffect(() => { localStorage.setItem('lorefall_cards_v28', JSON.stringify(cards)); }, [cards]);
       useEffect(() => {
-        localStorage.setItem('lorefall_deck_v27', JSON.stringify(deck));
-        localStorage.setItem('lorefall_hero_v27', selectedHeroId);
+        localStorage.setItem('lorefall_deck_v28', JSON.stringify(deck));
+        localStorage.setItem('lorefall_hero_v28', selectedHeroId);
       }, [deck, selectedHeroId]);
-      useEffect(() => { localStorage.setItem('lorefall_saved_decks_v27', JSON.stringify(savedDecks)); }, [savedDecks]);
+      useEffect(() => { localStorage.setItem('lorefall_saved_decks_v28', JSON.stringify(savedDecks)); }, [savedDecks]);
 
       const triggerToast = (msg, isError = true) => {
         setNotification({ text: msg, isError });
@@ -577,17 +579,17 @@
       };
 
       return (
-        <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden">
+        <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden w-full max-w-full">
           
           {/* RESPONSIVE HEADER */}
-          <header className="px-3 py-2.5 md:h-16 md:px-6 md:py-0 bg-slate-900 border-b border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between shrink-0 z-10 relative gap-2 md:gap-0">
+          <header className="px-3 py-2.5 md:h-16 md:px-6 md:py-0 bg-slate-900 border-b border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between shrink-0 z-10 relative gap-2 md:gap-0 w-full max-w-full">
             <div className="flex items-center justify-between w-full md:w-auto">
               <div className="flex items-center gap-2 md:gap-3">
                 <span className="w-7 h-7 md:w-8 md:h-8 rounded bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center border border-amber-500/30 text-xs md:text-sm">LF</span>
                 <h1 className="text-sm md:text-lg font-bold tracking-wide">Lorefall Engine</h1>
               </div>
             </div>
-            <div className="flex items-center gap-2 md:gap-3 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-hide">
+            <div className="flex items-center gap-2 md:gap-3 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-hide max-w-full">
               <button onClick={() => setShowCloudModal(true)} className={`shrink-0 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs font-semibold transition border flex items-center gap-1 ${supabase ? 'bg-sky-950/60 border-sky-800 text-sky-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'}`}>
                 <span>☁️</span>
                 <span>{supabase ? (isSyncing ? 'Syncing...' : 'Cloud Connected') : 'Setup Cloud DB'}</span>
@@ -619,23 +621,23 @@
             </div>
           )}
 
-          <div className="flex flex-1 min-h-0 overflow-hidden relative">
+          <div className="flex flex-1 min-h-0 relative w-full max-w-full overflow-hidden">
             
             {/* VIEW: DECK BUILDER */}
             {view === 'deck-builder' ? (
-              <div className="flex flex-1 min-h-0 relative overflow-hidden">
+              <div className="flex flex-1 min-h-0 min-w-0 relative overflow-hidden w-full max-w-full">
                 
                 {/* 1. Main Card Pool */}
-                <div className={`flex-1 flex-col min-h-0 md:border-r border-slate-800 bg-slate-900/50 ${mobileDeckView ? 'hidden md:flex' : 'flex'}`}>
-                  <div className="p-3 md:p-6 pb-2 shrink-0 overflow-y-auto max-h-[35%] md:max-h-[40%]">
-                    <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 md:p-4 mb-3 shadow-sm">
+                <div className={`flex-1 flex flex-col min-h-0 min-w-0 w-full max-w-full md:border-r border-slate-800 bg-slate-900/50 ${mobileDeckView ? 'hidden md:flex' : 'flex'}`}>
+                  <div className="p-3 md:p-6 pb-2 shrink-0 overflow-y-auto max-h-[35%] md:max-h-[40%] w-full">
+                    <div className="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 md:p-4 mb-3 shadow-sm min-w-0">
                       <h2 className="text-[10px] md:text-xs uppercase font-bold tracking-wider text-slate-400 mb-1.5">1. Select Your Hero</h2>
                       <select value={selectedHeroId} onChange={(e) => handleHeroChange(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-slate-200 focus:outline-none focus:border-amber-500">
                         <option value="">-- Choose a Hero --</option>
                         {cards.filter(c => c._type === 'Hero').map(h => <option key={h._id} value={h._id}>{h["Hero Name"]} ({h.Faction} • {h.Class})</option>)}
                       </select>
                       {selectedHero && (
-                        <div className="mt-2.5 pt-2.5 border-t border-slate-700/60">
+                        <div className="mt-2.5 pt-2.5 border-t border-slate-700/60 min-w-0 break-words">
                             <div className="flex flex-wrap gap-3 text-xs text-slate-300 mb-2">
                                 <div><span className="text-slate-400">Faction:</span> <strong className="text-amber-400">{selectedHero.Faction}</strong></div>
                                 <div><span className="text-slate-400">Class:</span> <strong className="text-amber-400">{selectedHero.Class}</strong></div>
@@ -646,7 +648,7 @@
                     </div>
                     
                     {/* Filters - Fluid horizontal panning */}
-                    <div className="flex gap-2 items-center mb-1 overflow-x-auto pb-2 scrollbar-hide w-full">
+                    <div className="flex gap-2 items-center mb-1 overflow-x-auto pb-2 scrollbar-hide w-full max-w-full">
                       <input type="text" placeholder="Search text..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="shrink-0 w-28 md:w-auto md:flex-1 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500 placeholder-slate-500" />
                       <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className="shrink-0 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
                         <option value="All">All Types</option><option value="Ally">Ally</option><option value="Skill">Skill</option><option value="Equipment">Equipment</option><option value="Flash">Flash</option><option value="Synergy">Synergy</option>
@@ -668,14 +670,14 @@
                     </div>
                   </div>
                   
-                  {/* Dynamic Single-Column on Mobile, Multi-Column on Larger Screens */}
-                  <div className="flex-1 overflow-y-auto px-3 md:px-6 pb-24 md:pb-6 min-h-0">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                  {/* Dynamic Grid */}
+                  <div className="flex-1 overflow-y-auto px-3 md:px-6 pb-24 md:pb-6 min-h-0 w-full">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 w-full max-w-full">
                       {filteredPool.map(card => {
                         const cost = card["Mana Cost"] !== "" ? `${card["Mana Cost"]} Mana` : (card["Gold Cost"] !== "" ? `${card["Gold Cost"]} Gold` : null);
                         return (
-                          <div key={card._id} className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 flex flex-col justify-between hover:border-slate-600 transition h-full shadow-sm">
-                            <div className="flex-1 flex flex-col">
+                          <div key={card._id} className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 flex flex-col justify-between hover:border-slate-600 transition h-full shadow-sm min-w-0 max-w-full overflow-hidden break-words">
+                            <div className="flex-1 flex flex-col min-w-0">
                               {card["Image URL"] && (
                                 <div className="w-full aspect-[4/3] sm:h-44 md:h-48 mb-2.5 rounded-lg bg-black/60 border border-slate-700/50 flex items-center justify-center p-2 shrink-0">
                                     <img src={formatImageUrl(card["Image URL"])} alt={card["Card Name"] || card["Hero Name"]} className="max-w-full max-h-full object-contain drop-shadow-md rounded" loading="lazy" />
@@ -686,13 +688,13 @@
                                 <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 shrink-0">{card["Card Rarity"] || "Common"}</span>
                               </div>
                               <div className="text-xs text-amber-500/90 font-medium mt-0.5">{card._type} {cost && `• ${cost}`}</div>
-                              <div className="text-xs text-slate-400 mt-2 space-y-0.5 flex-1">
+                              <div className="text-xs text-slate-400 mt-2 space-y-0.5 flex-1 min-w-0 break-words">
                                 {card.Faction && <div><span className="text-slate-400">Faction:</span> {card.Faction}</div>}
                                 {card["Compatible Classes"] && <div><span className="text-slate-400">Class:</span> {card["Compatible Classes"]}</div>}
                                 {card.Attack !== undefined && card.Attack !== "" && <div><span className="text-slate-400">Attack:</span> {card.Attack} {card["Attack Type"] ? `(${card["Attack Type"]})` : ''}</div>}
                               </div>
                             </div>
-                            <div className="mt-3 pt-2 border-t border-slate-700/40 flex items-center gap-2 shrink-0">
+                            <div className="mt-3 pt-2 border-t border-slate-700/40 flex items-center gap-2 shrink-0 w-full">
                               <button onClick={() => setModalCard(card)} className="px-3 py-1.5 text-xs font-semibold rounded bg-slate-700 hover:bg-slate-600 text-slate-300">Stats</button>
                               <button onClick={() => handleAddCard(card)} className="flex-1 py-1.5 text-xs font-semibold rounded bg-amber-600 hover:bg-amber-500 text-white transition">+ Add</button>
                             </div>
@@ -703,9 +705,9 @@
                   </div>
                 </div>
 
-                {/* 2. Deck List Sidebar (Absolute Fullscreen on Mobile, Docked on Desktop) */}
-                <div className={`w-full md:w-80 bg-slate-900 md:border-l border-slate-800 flex-col shrink-0 min-h-0 absolute md:relative inset-0 md:inset-auto z-10 ${mobileDeckView ? 'flex' : 'hidden md:flex'}`}>
-                  <div className="p-3 md:p-4 border-b border-slate-800 bg-slate-800/40 shrink-0 shadow-sm">
+                {/* 2. Deck List Sidebar */}
+                <div className={`w-full max-w-full md:w-80 bg-slate-900 md:border-l border-slate-800 flex-col shrink-0 min-h-0 absolute md:relative inset-0 md:inset-auto z-10 ${mobileDeckView ? 'flex' : 'hidden md:flex'}`}>
+                  <div className="p-3 md:p-4 border-b border-slate-800 bg-slate-800/40 shrink-0 shadow-sm w-full">
                     <div className="flex justify-between items-center mb-2">
                       <h2 className="text-sm font-bold uppercase tracking-wider text-slate-300">Main Deck</h2>
                       <span className={`text-xs px-2 py-0.5 rounded font-bold ${deckCount === MAX_DECK ? 'bg-emerald-950 border border-emerald-800 text-emerald-400' : 'bg-amber-950 border border-amber-800 text-amber-400'}`}>{deckCount} / {MAX_DECK}</span>
@@ -722,10 +724,10 @@
                         <button onClick={() => setShowStatsModal(true)} className="w-full mt-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold uppercase tracking-wider rounded transition border border-slate-700">📊 View Deck Stats</button>
                     )}
                   </div>
-                  <div className="flex-1 overflow-y-auto p-3 md:p-4 pb-24 md:pb-4 space-y-2 min-h-0">
+                  <div className="flex-1 overflow-y-auto p-3 md:p-4 pb-24 md:pb-4 space-y-2 min-h-0 w-full">
                     {Object.values(deck).map(({ card, count }) => (
-                      <div key={card._id} className="flex justify-between items-center bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm hover:bg-slate-800/80 transition">
-                        <div className="truncate mr-2 flex-1 cursor-pointer" onClick={() => setModalCard(card)}>
+                      <div key={card._id} className="flex justify-between items-center bg-slate-800/50 border border-slate-700/50 rounded-lg px-3 py-2 text-sm hover:bg-slate-800/80 transition min-w-0">
+                        <div className="truncate mr-2 flex-1 cursor-pointer min-w-0" onClick={() => setModalCard(card)}>
                           <span className="font-bold text-amber-400 mr-2">{count}×</span>
                           <span className="text-slate-200">{card["Card Name"]}</span>
                         </div>
@@ -746,8 +748,8 @@
             ) : view === 'saved-decks' ? (
               
               /* VIEW: SAVED DECKS */
-              <div className="flex flex-col md:flex-row flex-1 min-h-0 bg-slate-950">
-                 <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-slate-800 p-4 md:p-6 overflow-y-auto bg-slate-900/50 flex flex-col h-[35vh] md:h-auto shrink-0">
+              <div className="flex flex-col md:flex-row flex-1 min-h-0 bg-slate-950 w-full max-w-full">
+                 <div className="w-full max-w-full md:w-1/3 border-b md:border-b-0 md:border-r border-slate-800 p-4 md:p-6 overflow-y-auto bg-slate-900/50 flex flex-col h-[35vh] md:h-auto shrink-0 min-w-0">
                    <div className="flex justify-between items-center mb-3">
                        <h2 className="text-lg font-bold text-slate-200 uppercase tracking-wider text-xs">Saved Decks</h2>
                    </div>
@@ -761,7 +763,7 @@
                    </div>
                    
                    {Object.keys(savedDecks).length === 0 && <p className="text-slate-500 text-xs">No decks saved yet.</p>}
-                   <div className="space-y-2.5 flex-1 overflow-y-auto pr-1">
+                   <div className="space-y-2.5 flex-1 overflow-y-auto pr-1 min-w-0 w-full">
                      {Object.entries(savedDecks)
                         .filter(([_, data]) => savedDeckTab === 'All' || data.creator === currentUser)
                         .map(([name, deckData]) => {
@@ -769,31 +771,31 @@
                         const isSelected = selectedSavedDeck === name;
                         const sDeckTotal = Object.values(deckData.cards).reduce((sum, item) => sum + item.count, 0);
                         return (
-                          <div key={name} className={`p-3 rounded-xl border cursor-pointer transition ${isSelected ? 'bg-amber-900/20 border-amber-600' : 'bg-slate-800/80 border-slate-700 hover:border-amber-500/50'}`} onClick={() => setSelectedSavedDeck(name)}>
-                            <div className="flex justify-between items-start">
-                                <h3 className="font-bold text-amber-500 text-base leading-tight">{name}</h3>
-                                <span className="text-[10px] bg-slate-900 border border-slate-700 px-1.5 py-0.5 rounded text-slate-400 shrink-0 ml-2">{sDeckTotal} Cards</span>
+                          <div key={name} className={`p-3 rounded-xl border cursor-pointer transition min-w-0 ${isSelected ? 'bg-amber-900/20 border-amber-600' : 'bg-slate-800/80 border-slate-700 hover:border-amber-500/50'}`} onClick={() => setSelectedSavedDeck(name)}>
+                            <div className="flex justify-between items-start min-w-0 gap-2">
+                                <h3 className="font-bold text-amber-500 text-base leading-tight truncate min-w-0">{name}</h3>
+                                <span className="text-[10px] bg-slate-900 border border-slate-700 px-1.5 py-0.5 rounded text-slate-400 shrink-0">{sDeckTotal} Cards</span>
                             </div>
-                            <p className="text-xs text-slate-400 mt-1">Hero: {hero ? hero["Hero Name"] : "Unknown"} <br/><span className="text-amber-500/70">By: {deckData.creator || 'Anonymous'}</span></p>
+                            <p className="text-xs text-slate-400 mt-1 truncate">Hero: {hero ? hero["Hero Name"] : "Unknown"} <br/><span className="text-amber-500/70">By: {deckData.creator || 'Anonymous'}</span></p>
                           </div>
                         )
                      })}
                    </div>
                  </div>
                  
-                 <div className="flex-1 p-4 md:p-6 overflow-y-auto">
+                 <div className="flex-1 p-4 md:p-6 overflow-y-auto min-w-0 w-full">
                    {selectedSavedDeck && savedDecks[selectedSavedDeck] ? (() => {
                       const sDeck = savedDecks[selectedSavedDeck];
                       const hero = cards.find(c => c._id === sDeck.heroId);
                       const sDeckTotal = Object.values(sDeck.cards).reduce((sum, item) => sum + item.count, 0);
                       return (
-                        <div>
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5">
-                            <div>
-                                <h2 className="text-xl md:text-2xl font-bold text-slate-100">{selectedSavedDeck}</h2>
+                        <div className="min-w-0">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 min-w-0">
+                            <div className="min-w-0">
+                                <h2 className="text-xl md:text-2xl font-bold text-slate-100 truncate">{selectedSavedDeck}</h2>
                                 <p className="text-xs md:text-sm text-slate-400 mt-0.5">Total Main Deck: <strong className="text-amber-500">{sDeckTotal} / 40 Cards</strong></p>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 shrink-0">
                               <button onClick={() => {
                                  setSelectedHeroId(sDeck.heroId);
                                  setDeck(sDeck.cards);
@@ -817,23 +819,23 @@
                           </div>
                           
                           {hero && (
-                            <div className="mb-4 p-3 bg-slate-800/80 rounded-xl border border-slate-700 flex gap-3 items-center">
+                            <div className="mb-4 p-3 bg-slate-800/80 rounded-xl border border-slate-700 flex gap-3 items-center min-w-0">
                               <div className="w-12 h-12 rounded bg-slate-900 border border-slate-700 flex items-center justify-center text-2xl shrink-0 cursor-pointer" onClick={() => setModalCard(hero)}>👑</div>
-                              <div>
-                                <h3 className="font-bold text-base text-slate-200 cursor-pointer hover:text-amber-400 transition" onClick={() => setModalCard(hero)}>{hero["Hero Name"]}</h3>
-                                <p className="text-xs text-amber-500">{hero.Faction} • {hero.Class}</p>
+                              <div className="min-w-0">
+                                <h3 className="font-bold text-base text-slate-200 cursor-pointer hover:text-amber-400 transition truncate" onClick={() => setModalCard(hero)}>{hero["Hero Name"]}</h3>
+                                <p className="text-xs text-amber-500 truncate">{hero.Faction} • {hero.Class}</p>
                               </div>
                             </div>
                           )}
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5">
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2.5 w-full">
                             {Object.values(sDeck.cards).map(({card, count}) => (
-                               <div key={card._id} className="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700/50 flex justify-between items-center cursor-pointer hover:border-slate-500 transition" onClick={() => setModalCard(card)}>
-                                 <div className="truncate mr-2">
+                               <div key={card._id} className="bg-slate-800/50 p-2.5 rounded-lg border border-slate-700/50 flex justify-between items-center cursor-pointer hover:border-slate-500 transition min-w-0" onClick={() => setModalCard(card)}>
+                                 <div className="truncate mr-2 min-w-0 flex-1">
                                     <span className="font-bold text-amber-400 mr-2">{count}×</span>
-                                    <span className="text-xs md:text-sm text-slate-200">{card["Card Name"]}</span>
+                                    <span className="text-xs md:text-sm text-slate-200 truncate">{card["Card Name"]}</span>
                                  </div>
-                                 <span className="text-[10px] uppercase font-bold bg-slate-900 px-1.5 py-0.5 rounded text-slate-400 border border-slate-700">{card["Card Rarity"] || "Common"}</span>
+                                 <span className="text-[10px] uppercase font-bold bg-slate-900 px-1.5 py-0.5 rounded text-slate-400 border border-slate-700 shrink-0">{card["Card Rarity"] || "Common"}</span>
                                </div>
                             ))}
                           </div>
@@ -847,21 +849,21 @@
             ) : view === 'card-forge' ? (
 
               /* VIEW: CARD FORGE */
-              <div className="flex flex-col md:flex-row flex-1 min-h-0 bg-slate-950 overflow-hidden">
+              <div className="flex flex-col md:flex-row flex-1 min-h-0 bg-slate-950 overflow-hidden w-full max-w-full">
                 
                 {/* Forge Form */}
-                <div className="w-full md:w-1/2 border-t md:border-t-0 md:border-r border-slate-800 flex flex-col bg-slate-900/40 order-2 md:order-1 flex-1 md:flex-none md:h-auto min-h-0">
-                  <div className="p-3 md:p-6 border-b border-slate-800 bg-slate-800/60 shrink-0">
+                <div className="w-full max-w-full md:w-1/2 border-t md:border-t-0 md:border-r border-slate-800 flex flex-col bg-slate-900/40 order-2 md:order-1 flex-1 md:flex-none md:h-auto min-h-0 min-w-0">
+                  <div className="p-3 md:p-6 border-b border-slate-800 bg-slate-800/60 shrink-0 w-full">
                     <h2 className="text-base md:text-xl font-bold text-slate-100 flex items-center gap-2 mb-2 md:mb-4">⚒️ Card Forge</h2>
-                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                    <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide w-full max-w-full">
                         {Object.keys(FORGE_LAYOUTS).map(cat => (
                             <button key={cat} onClick={() => { setForgeCategory(cat); setForgeData({}); }} className={`shrink-0 px-3 py-1 md:px-4 md:py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition ${forgeCategory === cat ? 'bg-amber-600 text-white shadow-md' : 'bg-slate-900 text-slate-400 hover:bg-slate-700'}`}>{cat}</button>
                         ))}
                     </div>
                   </div>
                   
-                  <div className="flex-1 overflow-y-auto p-3 md:p-6">
-                    <form id="forgeForm" onSubmit={handleForgeSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                  <div className="flex-1 overflow-y-auto p-3 md:p-6 w-full min-w-0">
+                    <form id="forgeForm" onSubmit={handleForgeSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 w-full">
                         {FORGE_LAYOUTS[forgeCategory].filter(key => {
                             const at = forgeData["Attack Type"];
                             const flashSub = forgeData["Flash Subtype"];
@@ -911,7 +913,7 @@
                             if (key === 'Class' && forgeCategory === 'Hero') {
                                 const heroClasses = ["", "Assassin", "Berserker", "Mage", "Paladin", "Ranger", "Warrior"];
                                 inputElement = (
-                                    <select value={val} onChange={e => handleForgeChange(key, e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+                                    <select value={val} onChange={e => handleForgeChange(key, e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 min-w-0">
                                         {heroClasses.map(o => <option key={o} value={o}>{o === "" ? "-- Select --" : o}</option>)}
                                     </select>
                                 );
@@ -919,7 +921,7 @@
                                 const listId = `forge-${key.replace(/\s+/g, '-').toLowerCase()}-list`;
                                 inputElement = (
                                     <>
-                                        <input list={listId} type="text" value={val} onChange={e => handleForgeChange(key, e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500" placeholder={`Select or type ${key.toLowerCase()}...`} />
+                                        <input list={listId} type="text" value={val} onChange={e => handleForgeChange(key, e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 min-w-0" placeholder={`Select or type ${key.toLowerCase()}...`} />
                                         <datalist id={listId}>
                                             {FIELD_TYPES[key].options.map(o => <option key={o} value={o} />)}
                                         </datalist>
@@ -927,9 +929,9 @@
                                 );
                             } else if (spec.type === 'textarea') {
                                 inputElement = (
-                                    <div className="flex flex-col gap-1.5 w-full">
+                                    <div className="flex flex-col gap-1.5 w-full min-w-0">
                                         {key === 'Abilities' && (
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-2 w-full">
                                                 <button type="button" onClick={() => handleForgeChange('Abilities', (forgeData['Abilities'] || '') + '[Mana:2]')} className="text-[10px] bg-purple-900/60 border border-purple-700/60 text-purple-200 px-2 py-0.5 rounded hover:bg-purple-800/80 transition flex items-center gap-1">
                                                     <span className="w-3 h-3 rounded-full bg-purple-600 inline-flex items-center justify-center text-[8px] font-bold text-white">M</span> + Mana
                                                 </button>
@@ -938,12 +940,12 @@
                                                 </button>
                                             </div>
                                         )}
-                                        <textarea value={val} onChange={e => handleForgeChange(key, e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 min-h-[70px]" placeholder={`Enter ${key}...`} />
+                                        <textarea value={val} onChange={e => handleForgeChange(key, e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 min-h-[70px] min-w-0" placeholder={`Enter ${key}...`} />
                                     </div>
                                 );
                             } else if (spec.type === 'select') {
                                 inputElement = (
-                                    <select value={val} onChange={e => handleForgeChange(key, e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+                                    <select value={val} onChange={e => handleForgeChange(key, e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 min-w-0">
                                         {spec.options.map(o => <option key={o} value={o}>{o === "" ? "-- Select --" : o}</option>)}
                                     </select>
                                 );
@@ -960,18 +962,18 @@
                                             if (s.length > 3) return triggerToast(`Max 3 compatible classes allowed.`, true);
                                         }
                                         handleForgeChange(key, s.join(", ")); 
-                                    }} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 h-[90px]">
+                                    }} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 h-[90px] min-w-0">
                                         {spec.options.map(o => <option key={o} value={o}>{o}</option>)}
                                     </select>
                                 );
                             } else if (spec.type === 'number') {
-                                inputElement = <input type="number" step="any" value={val} onChange={e => handleForgeChange(key, e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500" placeholder="0" />;
+                                inputElement = <input type="number" step="any" value={val} onChange={e => handleForgeChange(key, e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 min-w-0" placeholder="0" />;
                             } else {
-                                inputElement = <input type="text" value={val} onChange={e => handleForgeChange(key, e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500" placeholder={`Enter ${key}...`} />;
+                                inputElement = <input type="text" value={val} onChange={e => handleForgeChange(key, e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 min-w-0" placeholder={`Enter ${key}...`} />;
                             }
 
                             return (
-                                <div key={key} className={`flex flex-col gap-1.5 ${spec.type === 'textarea' || key.includes('Name') ? 'md:col-span-2' : ''}`}>
+                                <div key={key} className={`flex flex-col gap-1.5 min-w-0 w-full ${spec.type === 'textarea' || key.includes('Name') ? 'md:col-span-2' : ''}`}>
                                     <label className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest">{key}</label>
                                     {inputElement}
                                 </div>
@@ -979,7 +981,7 @@
                         })}
                     </form>
                   </div>
-                  <div className="p-3 md:p-6 border-t border-slate-800 bg-slate-800/40 shrink-0">
+                  <div className="p-3 md:p-6 border-t border-slate-800 bg-slate-800/40 shrink-0 w-full">
                       {currentUser ? (
                           <button type="submit" form="forgeForm" className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white font-bold uppercase tracking-widest text-xs md:text-sm shadow-md transition">Forge Card to Database</button>
                       ) : (
@@ -991,8 +993,8 @@
                 </div>
                 
                 {/* Live Preview */}
-                <div className="w-full md:w-1/2 p-3 md:p-10 flex items-center justify-center bg-slate-950 relative overflow-y-auto order-1 md:order-2 max-h-[35vh] md:max-h-none shrink-0 border-b md:border-b-0 border-slate-800">
-                    <div className="w-full max-w-xs md:max-w-sm relative z-10 bg-slate-800 border border-slate-600 rounded-2xl shadow-xl flex flex-col overflow-hidden">
+                <div className="w-full max-w-full md:w-1/2 p-3 md:p-10 flex items-center justify-center bg-slate-950 relative overflow-y-auto order-1 md:order-2 max-h-[35vh] md:max-h-none shrink-0 border-b md:border-b-0 border-slate-800 min-w-0">
+                    <div className="w-full max-w-xs md:max-w-sm relative z-10 bg-slate-800 border border-slate-600 rounded-2xl shadow-xl flex flex-col overflow-hidden min-w-0">
                         {forgeData["Image URL"] ? (
                             <div className="w-full h-32 md:h-64 bg-black flex items-center justify-center border-b border-slate-700 p-2">
                                 <img src={formatImageUrl(forgeData["Image URL"])} className="max-w-full max-h-full object-contain drop-shadow-md rounded-lg" />
@@ -1002,29 +1004,29 @@
                                 No Artwork
                             </div>
                         )}
-                        <div className="p-3 md:p-5">
-                            <div className="flex justify-between items-start mb-1.5">
-                                <h3 className="text-base md:text-2xl font-bold text-slate-100 leading-tight">{forgeData["Card Name"] || forgeData["Hero Name"] || "Unnamed Card"}</h3>
-                                {forgeData["Card Rarity"] && <span className="text-[10px] bg-slate-950 border border-slate-700 px-2 py-0.5 rounded text-slate-300 font-bold uppercase tracking-wider">{forgeData["Card Rarity"]}</span>}
+                        <div className="p-3 md:p-5 min-w-0 break-words">
+                            <div className="flex justify-between items-start mb-1.5 min-w-0 gap-2">
+                                <h3 className="text-base md:text-2xl font-bold text-slate-100 leading-tight min-w-0 break-words">{forgeData["Card Name"] || forgeData["Hero Name"] || "Unnamed Card"}</h3>
+                                {forgeData["Card Rarity"] && <span className="text-[10px] bg-slate-950 border border-slate-700 px-2 py-0.5 rounded text-slate-300 font-bold uppercase tracking-wider shrink-0">{forgeData["Card Rarity"]}</span>}
                             </div>
-                            <div className="text-xs md:text-sm font-semibold text-amber-500 mb-3">{forgeCategory} {forgeData["Mana Cost"] !== undefined && forgeData["Mana Cost"] !== "" ? `• ${forgeData["Mana Cost"]} Mana` : ''}{forgeData["Gold Cost"] !== undefined && forgeData["Gold Cost"] !== "" ? `• ${forgeData["Gold Cost"]} Gold` : ''}</div>
+                            <div className="text-xs md:text-sm font-semibold text-amber-500 mb-3 truncate">{forgeCategory} {forgeData["Mana Cost"] !== undefined && forgeData["Mana Cost"] !== "" ? `• ${forgeData["Mana Cost"]} Mana` : ''}{forgeData["Gold Cost"] !== undefined && forgeData["Gold Cost"] !== "" ? `• ${forgeData["Gold Cost"]} Gold` : ''}</div>
                             
-                            <div className="space-y-1 text-xs text-slate-300">
-                                {forgeData.Faction && <div><span className="text-slate-500">Faction:</span> {forgeData.Faction}</div>}
-                                {forgeData.Class && <div><span className="text-slate-500">Class:</span> {forgeData.Class}</div>}
-                                {forgeData["Compatible Classes"] && <div><span className="text-slate-500">Compatible:</span> {forgeData["Compatible Classes"]}</div>}
+                            <div className="space-y-1 text-xs text-slate-300 min-w-0">
+                                {forgeData.Faction && <div className="truncate"><span className="text-slate-500">Faction:</span> {forgeData.Faction}</div>}
+                                {forgeData.Class && <div className="truncate"><span className="text-slate-500">Class:</span> {forgeData.Class}</div>}
+                                {forgeData["Compatible Classes"] && <div className="truncate"><span className="text-slate-500">Compatible:</span> {forgeData["Compatible Classes"]}</div>}
                                 
-                                <div className="flex flex-wrap gap-2 md:gap-4 pt-1.5">
-                                    {forgeData.Attack && <div><span className="text-slate-500">ATK:</span> {forgeData.Attack} {forgeData["Attack Type"] ? `(${forgeData["Attack Type"]})` : ''}</div>}
-                                    {forgeData.Power !== undefined && forgeData.Power !== "" && forgeData.Attack !== "None" && <div><span className="text-slate-500">PWR:</span> {forgeData.Power}</div>}
-                                    {forgeData["Power Modifier"] !== undefined && forgeData["Power Modifier"] !== "" && forgeData.Attack === "None" && <div><span className="text-slate-500">PWR MOD:</span> {forgeData["Power Modifier"] > 0 ? '+' : ''}{forgeData["Power Modifier"]}</div>}
-                                    {forgeData.Health !== undefined && forgeData.Health !== "" && <div><span className="text-slate-500">HP:</span> {forgeData.Health}</div>}
-                                    {forgeData.Dexterity !== undefined && forgeData.Dexterity !== "" && <div><span className="text-slate-500">DEX:</span> {forgeData.Dexterity}</div>}
+                                <div className="flex flex-wrap gap-2 md:gap-4 pt-1.5 min-w-0">
+                                    {forgeData.Attack && <div className="truncate"><span className="text-slate-500">ATK:</span> {forgeData.Attack} {forgeData["Attack Type"] ? `(${forgeData["Attack Type"]})` : ''}</div>}
+                                    {forgeData.Power !== undefined && forgeData.Power !== "" && forgeData.Attack !== "None" && <div className="truncate"><span className="text-slate-500">PWR:</span> {forgeData.Power}</div>}
+                                    {forgeData["Power Modifier"] !== undefined && forgeData["Power Modifier"] !== "" && forgeData.Attack === "None" && <div className="truncate"><span className="text-slate-500">PWR MOD:</span> {forgeData["Power Modifier"] > 0 ? '+' : ''}{forgeData["Power Modifier"]}</div>}
+                                    {forgeData.Health !== undefined && forgeData.Health !== "" && <div className="truncate"><span className="text-slate-500">HP:</span> {forgeData.Health}</div>}
+                                    {forgeData.Dexterity !== undefined && forgeData.Dexterity !== "" && <div className="truncate"><span className="text-slate-500">DEX:</span> {forgeData.Dexterity}</div>}
                                 </div>
                             </div>
                             
                             {forgeData.Abilities && (
-                                <div className="mt-2.5 pt-2.5 border-t border-slate-700 text-xs text-slate-200 whitespace-pre-wrap leading-relaxed">
+                                <div className="mt-2.5 pt-2.5 border-t border-slate-700 text-xs text-slate-200 whitespace-pre-wrap leading-relaxed min-w-0 break-words">
                                     {renderAbilityText(forgeData.Abilities)}
                                 </div>
                             )}
@@ -1035,8 +1037,8 @@
             ) : (
 
               /* VIEW: DATABASE */
-              <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-950 relative">
-                <div className="h-10 md:h-12 border-b border-slate-800 px-3 md:px-6 flex items-center gap-2 bg-slate-900 shrink-0 overflow-x-auto scrollbar-hide">
+              <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-slate-950 relative w-full max-w-full">
+                <div className="h-10 md:h-12 border-b border-slate-800 px-3 md:px-6 flex items-center gap-2 bg-slate-900 shrink-0 overflow-x-auto scrollbar-hide max-w-full w-full">
                   {['All', 'Hero', 'Ally', 'Skill', 'Flash', 'Equipment', 'Synergy'].map(tab => (
                     <button key={tab} onClick={() => setActiveTab(tab)} className={`shrink-0 px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-semibold transition ${activeTab === tab ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800'}`}>{tab}</button>
                   ))}
@@ -1129,7 +1131,7 @@
           {/* DECK STATS MODAL */}
           {showStatsModal && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 z-50">
-              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl p-0 max-h-[90dvh] flex flex-col shadow-2xl">
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl p-0 max-h-[90dvh] flex flex-col shadow-2xl min-w-0">
                 <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-800 flex justify-between items-start bg-slate-800/40 rounded-t-2xl shrink-0">
                   <div>
                     <h3 className="text-base md:text-xl font-bold text-slate-100">Deck Statistics</h3>
@@ -1138,7 +1140,7 @@
                   <button onClick={() => setShowStatsModal(false)} className="text-slate-400 hover:text-white font-bold text-xl p-1 leading-none rounded hover:bg-slate-700 transition">✕</button>
                 </div>
                 
-                <div className="p-4 md:p-6 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                <div className="p-4 md:p-6 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 w-full min-w-0">
                     <div className="col-span-1 md:col-span-2 bg-slate-800/50 p-4 md:p-5 rounded-xl border border-slate-700/50 shadow-inner">
                         <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-3 border-b border-slate-700 pb-1.5">Cost Sustainability</h4>
                         <div className="flex flex-col sm:flex-row gap-4 md:gap-6 items-center justify-around mb-3">
@@ -1152,7 +1154,7 @@
                                 <div className="text-xs text-slate-400 uppercase font-bold mt-1">Avg Cost per Card</div>
                             </div>
                         </div>
-                        <div className={`text-center font-semibold text-xs md:text-sm ${deckAnalytics.sustainColor} bg-slate-900 py-2.5 px-3 rounded-lg border border-slate-800/50`}>
+                        <div className={`text-center font-semibold text-xs md:text-sm ${deckAnalytics.sustainColor} bg-slate-900 py-2.5 px-3 rounded-lg border border-slate-800/50 break-words`}>
                             {deckAnalytics.sustainText}
                         </div>
                     </div>
@@ -1175,18 +1177,18 @@
                         </div>
                     </div>
 
-                    <div className="bg-slate-800/30 p-4 md:p-5 rounded-xl border border-slate-800">
+                    <div className="bg-slate-800/30 p-4 md:p-5 rounded-xl border border-slate-800 min-w-0">
                         <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-3 border-b border-slate-700 pb-1.5">Mana / Charge Curve</h4>
-                        <div className="pt-1">
+                        <div className="pt-1 min-w-0 w-full">
                             {Object.entries(deckAnalytics.curve).map(([label, val]) => (
                                 <BarChartRow key={label} label={label} value={val} max={deckAnalytics.maxCurve} color="bg-blue-500" />
                             ))}
                         </div>
                     </div>
 
-                    <div className="col-span-1 md:col-span-2 bg-slate-800/30 p-4 md:p-5 rounded-xl border border-slate-800">
+                    <div className="col-span-1 md:col-span-2 bg-slate-800/30 p-4 md:p-5 rounded-xl border border-slate-800 min-w-0">
                         <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-3 border-b border-slate-700 pb-1.5">Deck Composition</h4>
-                        <div className="pt-1 grid grid-cols-1 md:grid-cols-2 gap-x-8">
+                        <div className="pt-1 grid grid-cols-1 md:grid-cols-2 gap-x-8 min-w-0 w-full">
                             {Object.entries(deckAnalytics.types).map(([label, val]) => (
                                 <BarChartRow key={label} label={label} value={val} max={deckAnalytics.maxType} color="bg-amber-500" />
                             ))}
@@ -1200,7 +1202,7 @@
           {/* SINGLE CARD MODAL */}
           {modalCard && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 z-[70]">
-              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl p-0 max-h-[90dvh] flex flex-col sm:flex-row shadow-2xl overflow-hidden">
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl p-0 max-h-[90dvh] flex flex-col sm:flex-row shadow-2xl overflow-hidden min-w-0">
                 {modalCard["Image URL"] && (
                     <div className="w-full sm:w-1/2 h-[30dvh] sm:min-h-[400px] bg-black/80 border-b sm:border-b-0 sm:border-r border-slate-800 flex items-center justify-center p-4 md:p-6 shrink-0">
                         <img src={formatImageUrl(modalCard["Image URL"])} className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-xl" />
@@ -1209,13 +1211,13 @@
                 
                 <div className="flex-1 flex flex-col min-w-0 max-h-[60dvh] sm:max-h-[90dvh]">
                   <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-800 flex justify-between items-start bg-slate-800/40 shrink-0">
-                    <div>
-                      <h3 className="text-base md:text-xl font-bold text-slate-100">{modalCard["Card Name"] || modalCard["Hero Name"]}</h3>
-                      <p className="text-xs md:text-sm text-amber-500 font-semibold mt-0.5">{modalCard._type} • {modalCard["Card Rarity"] || "Common"}</p>
+                    <div className="min-w-0">
+                      <h3 className="text-base md:text-xl font-bold text-slate-100 truncate">{modalCard["Card Name"] || modalCard["Hero Name"]}</h3>
+                      <p className="text-xs md:text-sm text-amber-500 font-semibold mt-0.5 truncate">{modalCard._type} • {modalCard["Card Rarity"] || "Common"}</p>
                     </div>
-                    <button onClick={() => setModalCard(null)} className="text-slate-400 hover:text-white font-bold text-xl p-1 leading-none rounded hover:bg-slate-700 transition">✕</button>
+                    <button onClick={() => setModalCard(null)} className="text-slate-400 hover:text-white font-bold text-xl p-1 leading-none rounded hover:bg-slate-700 transition shrink-0 ml-2">✕</button>
                   </div>
-                  <div className="p-4 md:p-6 overflow-y-auto space-y-3 text-xs md:text-sm divide-y divide-slate-800/60 flex-1 relative">
+                  <div className="p-4 md:p-6 overflow-y-auto space-y-3 text-xs md:text-sm divide-y divide-slate-800/60 flex-1 relative min-w-0">
                     {editMode && view === 'database' && (
                         <div className="absolute top-2 right-4 md:top-4 md:right-6 z-10">
                             <button onClick={() => handleDeleteCard(modalCard._id)} className="px-3 py-1.5 bg-rose-900/40 text-rose-300 text-xs font-bold rounded hover:bg-rose-700 hover:text-white transition">Delete</button>
@@ -1224,9 +1226,9 @@
                     {Object.entries(modalCard).map(([key, val]) => {
                       if (key.startsWith('_') || val === "" || val === null || val === undefined || key === "Image URL") return null;
                       return (
-                        <div key={key} className="pt-2.5 flex flex-col sm:flex-row sm:justify-between sm:gap-6 gap-1">
+                        <div key={key} className="pt-2.5 flex flex-col sm:flex-row sm:justify-between sm:gap-6 gap-1 min-w-0">
                           <span className="text-slate-500 font-medium shrink-0 uppercase tracking-wider text-[10px] sm:text-xs sm:mt-0.5">{key}</span>
-                          <span className="text-left sm:text-right text-slate-200 break-words whitespace-pre-wrap flex-1 leading-relaxed">
+                          <span className="text-left sm:text-right text-slate-200 break-words whitespace-pre-wrap flex-1 leading-relaxed min-w-0">
                               {key === 'Abilities' ? renderAbilityText(val) : String(val)}
                           </span>
                         </div>
@@ -1241,7 +1243,7 @@
           {/* USER AUTH MODAL */}
           {showAuthModal && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[90]">
-              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-5 shadow-2xl">
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-5 shadow-2xl min-w-0">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">👤 Profile Login / Register</h3>
                   <button onClick={() => setShowAuthModal(false)} className="text-slate-400 hover:text-white font-bold text-lg">✕</button>
@@ -1250,11 +1252,11 @@
                   Enter your username and a private PIN. If this is your first time using this name, your PIN will be saved to secure your account.
                 </p>
                 {authError && (
-                    <div className="mb-3 p-2 rounded bg-rose-950/80 border border-rose-800 text-rose-300 text-xs font-semibold">
+                    <div className="mb-3 p-2 rounded bg-rose-950/80 border border-rose-800 text-rose-300 text-xs font-semibold break-words">
                         {authError}
                     </div>
                 )}
-                <form onSubmit={handleAuthSubmit} className="space-y-3">
+                <form onSubmit={handleAuthSubmit} className="space-y-3 w-full">
                   <div>
                     <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Username</label>
                     <input type="text" value={authUsername} onChange={e => setAuthUsername(e.target.value)} placeholder="e.g. Gavin" className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500" required />
@@ -1274,7 +1276,7 @@
           {/* CLOUD CONFIG MODAL */}
           {showCloudModal && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[80]">
-              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-5 shadow-2xl">
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-5 shadow-2xl min-w-0">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">☁️ Supabase Cloud Config</h3>
                   <button onClick={() => setShowCloudModal(false)} className="text-slate-400 hover:text-white font-bold text-lg">✕</button>
@@ -1282,7 +1284,7 @@
                 <p className="text-xs text-slate-400 mb-3 leading-relaxed">
                   Enter your free Supabase credentials to enable global real-time synchronization of cards, decks, and user profiles across all devices.
                 </p>
-                <div className="space-y-3">
+                <div className="space-y-3 w-full">
                   <div>
                     <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Project URL</label>
                     <input type="text" id="sb_url_input" defaultValue={supabaseUrl} placeholder="https://xyzcompany.supabase.co" className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500" />
