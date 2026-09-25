@@ -581,20 +581,32 @@
         const cols = new Set();
         tabCards.forEach(c => { Object.keys(c).forEach(k => { if (!k.startsWith('_')) cols.add(k); }); });
         let colArray = Array.from(cols);
+        
+        // Force columns into a strict, logical layout regardless of JSONB scrambling
+        const MASTER_ORDER = [
+          "Card Name", "Card Rarity", "Status", "Skill Level", "Flash Subtype", "Equipment Type", "Equipment Subtype",
+          "Mana Cost", "Mana", "Gold Cost", "Trade Value", 
+          "Faction", "Class", "Compatible Classes", "Race", 
+          "Health", "Power", "Power Modifier", "Dexterity", 
+          "Attack Type", "Attack", "Ranged Attack", "Strike Type", "Charge Requirement", 
+          "Defense Modifier", "Defense Die Roll Modifier", 
+          "Abilities", "Creator", "Status Notes", "Image URL"
+        ];
+
+        colArray.sort((a, b) => {
+            const iA = MASTER_ORDER.indexOf(a);
+            const iB = MASTER_ORDER.indexOf(b);
+            if (iA === -1 && iB === -1) return a.localeCompare(b);
+            if (iA === -1) return 1;
+            if (iB === -1) return -1;
+            return iA - iB;
+        });
+
         if (!editMode) {
             colArray = colArray.filter(col => col !== "Image URL");
         }
         return colArray;
       }, [tabCards, editMode]);
-      
-      const FORGE_LAYOUTS = {
-          "Hero": ["Card Name", "Faction", "Class", "Race", "Mana", "Health", "Power", "Dexterity", "Abilities", "Image URL"],
-          "Ally": ["Card Name", "Card Rarity", "Mana Cost", "Faction", "Class", "Race", "Health", "Power", "Power Modifier", "Dexterity", "Attack Type", "Attack", "Ranged Attack", "Strike Type", "Charge Requirement", "Abilities", "Image URL"],
-          "Skill": ["Card Name", "Card Rarity", "Skill Level", "Mana Cost", "Trade Value", "Faction", "Compatible Classes", "Attack Type", "Attack", "Power Modifier", "Ranged Attack", "Strike Type", "Charge Requirement", "Abilities", "Image URL"],
-          "Flash": ["Card Name", "Card Rarity", "Flash Subtype", "Mana Cost", "Gold Cost", "Trade Value", "Faction", "Abilities", "Image URL"],
-          "Equipment": ["Card Name", "Card Rarity", "Equipment Type", "Equipment Subtype", "Gold Cost", "Attack Type", "Attack", "Power Modifier", "Ranged Attack", "Charge Requirement", "Defense Modifier", "Defense Die Roll Modifier", "Abilities", "Image URL"],
-          "Synergy": ["Card Name", "Card Rarity", "Mana Cost", "Trade Value", "Faction", "Abilities", "Image URL"]
-      };
 
       return (
         <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden w-full max-w-full">
