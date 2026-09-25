@@ -314,14 +314,15 @@
 
       const handleInlineChange = async (cardId, key, val) => {
           if (FIELD_TYPES[key]?.type === 'number' && val !== "") val = parseFloat(val);
-          let targetCard = null;
-          setCards(prevCards => prevCards.map(c => {
-            if (c._id === cardId) {
-              targetCard = { ...c, [key]: val };
-              return targetCard;
-            }
-            return c;
-          }));
+          
+          // 1. Calculate the updated card FIRST so it is available immediately
+          const existingCard = cards.find(c => c._id === cardId);
+          if (!existingCard) return;
+          
+          const targetCard = { ...existingCard, [key]: val };
+
+          // 2. Update local state
+          setCards(prevCards => prevCards.map(c => c._id === cardId ? targetCard : c));
 
           setDeck(prevDeck => {
               if (prevDeck[cardId]) {
@@ -331,9 +332,23 @@
               return prevDeck;
           });
 
-          if (supabase && targetCard) {
-            const { _id, _type, "Image URL": imgUrl, ...cleanData } = targetCard;
-            await supabase.from('cards').upsert({ id: _id, type: _type, data: cleanData, image_url: imgUrl || null });
+          // 3. Sync to Supabase immediately using the calculated targetCard
+          if (supabase) {
+              const { _id, _type, "Image URL": imgUrl, ...cleanData } = targetCard;
+              
+              const { error } = await supabase.from('cards').upsert({ 
+                  id: _id, 
+                  type: _type, 
+                  data: cleanData, 
+                  image_url: imgUrl || null 
+              });
+
+              if (error) {
+                  console.error("Supabase Sync Error:", error);
+                  triggerToast("Cloud Error: " + error.message, true);
+              } else if (key === "Image URL") {
+                  triggerToast("Artwork linked to cloud database!", false);
+              }
           }
       };
 
