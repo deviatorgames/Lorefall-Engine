@@ -690,7 +690,7 @@
                   
                   {/* Dynamic Grid */}
                   <div className="flex-1 overflow-y-auto px-3 md:px-6 pb-24 md:pb-6 min-h-0 w-full">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 w-full max-w-full">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 w-full max-w-full">
                       {filteredPool.map(card => {
                         const cost = card["Mana Cost"] !== "" ? `${card["Mana Cost"]} Mana` : (card["Gold Cost"] !== "" ? `${card["Gold Cost"]} Gold` : null);
                         return (
@@ -1219,13 +1219,12 @@
 
           {/* SINGLE CARD MODAL */}
           {modalCard && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 z-[70]">
-              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl p-0 max-h-[90dvh] flex flex-col sm:flex-row shadow-2xl overflow-hidden min-w-0">
-                {modalCard["Image URL"] && (
-                    <div className="w-full sm:w-1/2 h-[30dvh] sm:min-h-[400px] bg-black/80 border-b sm:border-b-0 sm:border-r border-slate-800 flex items-center justify-center p-4 md:p-6 shrink-0">
-                        <img src={formatImageUrl(modalCard["Image URL"])} className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-xl" />
-                    </div>
-                )}
+            <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-5xl p-0 max-h-[95dvh] flex flex-col sm:flex-row shadow-2xl overflow-hidden min-w-0">
+				{modalCard["Image URL"] && (
+					<div className="w-full sm:w-1/2 h-[30dvh] sm:min-h-[600px] bg-black border-b sm:border-b-0 sm:border-r border-slate-800 flex items-center justify-center p-2 md:p-4 shrink-0">
+						<img src={formatImageUrl(modalCard["Image URL"])} className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-xl" />
+					</div>
+				)}
                 
                 <div className="flex-1 flex flex-col min-w-0 max-h-[60dvh] sm:max-h-[90dvh]">
                   <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-800 flex justify-between items-start bg-slate-800/40 shrink-0">
