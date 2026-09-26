@@ -54,7 +54,7 @@
       "Compatible Classes": { type: "multiselect", options: ["Assassin", "Berserker", "Mage", "Paladin", "Ranger", "Warrior"] },
       "Mana Cost": { type: "number" }, "Mana": { type: "number" }, "Health": { type: "number" }, "Dexterity": { type: "number" },
       "Power": { type: "number" }, "Power Modifier": { type: "number" }, "Ranged Attack": { type: "number" }, "Charge Requirement": { type: "number" }, "Gold Cost": { type: "number" },
-      "Trade Value": { type: "number" }, "Defense Modifier": { type: "number" }, "Defense Die Roll Modifier": { type: "number" },
+      "Trade Value": { type: "number" }, "Defense Modifier": { type: "number" }, "Defense Die Roll Modifier": { type: "select", options: ["", "D4", "D6", "D8", "D10", "D12", "D20"] },
       "Is Official": { type: "select", options: ["", "true", "false"] },
       "Abilities": { type: "textarea" }, "Status Notes": { type: "textarea" }
     };
@@ -503,13 +503,18 @@
           }
       };
 
-      const deckAnalytics = useMemo(() => {
+		const deckAnalytics = useMemo(() => {
           const allDeckCards = Object.values(deck).flatMap(item => Array(item.count).fill(item.card));
           const manaIntake = parseFloat(selectedHero?.Mana) || 0;
+          const heroHealth = parseFloat(selectedHero?.Health) || 0;
           
           const cardsWithCost = allDeckCards.filter(c => parseFloat(c["Mana Cost"]) > 0 || parseFloat(c["Charge Requirement"]) > 0);
           const totalCost = cardsWithCost.reduce((sum, c) => sum + (parseFloat(c["Mana Cost"]) || 0) + (parseFloat(c["Charge Requirement"]) || 0), 0);
           const avgManaCost = cardsWithCost.length > 0 ? (totalCost / cardsWithCost.length) : 0;
+
+          const cardsWithGold = allDeckCards.filter(c => parseFloat(c["Gold Cost"]) > 0);
+          const totalGoldCost = cardsWithGold.reduce((sum, c) => sum + (parseFloat(c["Gold Cost"]) || 0), 0);
+          const avgGoldCost = cardsWithGold.length > 0 ? (totalGoldCost / cardsWithGold.length) : 0;
           
           const diff = manaIntake - avgManaCost;
           let sustainText = ""; let sustainColor = "";
@@ -528,9 +533,27 @@
           }
 
           const allies = allDeckCards.filter(c => c._type === 'Ally');
+          const totalAllyHealth = allies.reduce((sum, c) => sum + (parseFloat(c.Health) || 0), 0);
           const avgPower = allies.length ? (allies.reduce((sum, c) => sum + (parseFloat(c.Power) || 0), 0) / allies.length).toFixed(1) : 0;
-          const avgHealth = allies.length ? (allies.reduce((sum, c) => sum + (parseFloat(c.Health) || 0), 0) / allies.length).toFixed(1) : 0;
+          const avgRangedAttack = allies.length ? (allies.reduce((sum, c) => sum + (parseFloat(c["Ranged Attack"]) || 0), 0) / allies.length).toFixed(1) : 0;
+          const avgHealth = allies.length ? (totalAllyHealth / allies.length).toFixed(1) : 0;
           const avgDex = allies.length ? (allies.reduce((sum, c) => sum + (parseFloat(c.Dexterity) || 0), 0) / allies.length).toFixed(1) : 0;
+
+          const totalEHP = heroHealth + totalAllyHealth;
+          let longevityText = ""; let longevityColor = "";
+          if (totalEHP >= 120) {
+              longevityText = `Exceptional longevity. With ${totalAllyHealth} health across your allies cushioning your hero's ${heroHealth} base health, your deck can absorb massive breakthrough damage.`;
+              longevityColor = "text-emerald-400";
+          } else if (totalEHP >= 80) {
+              longevityText = `Solid longevity. Your allies provide ${totalAllyHealth} health to shield your hero. You have a healthy buffer against breakthrough attacks.`;
+              longevityColor = "text-blue-400";
+          } else if (totalEHP >= 50) {
+              longevityText = `Moderate longevity. Your combined health pool is decent, but heavy breakthrough damage could threaten your hero quickly.`;
+              longevityColor = "text-amber-400";
+          } else {
+              longevityText = `Vulnerable. With only ${totalAllyHealth} total ally health, your hero is highly exposed to breakthrough damage.`;
+              longevityColor = "text-rose-400";
+          }
 
           const curve = { "0-1": 0, "2": 0, "3": 0, "4": 0, "5+": 0 };
           allDeckCards.forEach(c => {
@@ -544,7 +567,13 @@
           allDeckCards.forEach(c => { if (types[c._type] !== undefined) types[c._type]++; });
           const maxType = Math.max(...Object.values(types), 1);
 
-          return { manaIntake, avgManaCost: avgManaCost.toFixed(1), sustainText, sustainColor, avgPower, avgHealth, avgDex, curve, maxCurve, types, maxType, cardCount: allDeckCards.length };
+          return { 
+              manaIntake, avgManaCost: avgManaCost.toFixed(1), avgGoldCost: avgGoldCost.toFixed(1), 
+              sustainText, sustainColor, 
+              avgPower, avgRangedAttack, avgHealth, avgDex, 
+              totalEHP, longevityText, longevityColor,
+              curve, maxCurve, types, maxType, cardCount: allDeckCards.length 
+          };
       }, [deck, selectedHero]);
 
       const filteredPool = useMemo(() => {
@@ -620,9 +649,9 @@
             colArray = colArray.filter(col => col !== "Image URL" && col !== "Is Official");
         }
         return colArray;
-      }, [tabCards, editMode]);
+	}, [tabCards, editMode]);
 
-      const FORGE_LAYOUTS = {
+		const FORGE_LAYOUTS = {
           "Hero": ["Card Name", "Faction", "Class", "Race", "Mana", "Health", "Power", "Dexterity", "Abilities", "Image URL"],
           "Ally": ["Card Name", "Card Rarity", "Mana Cost", "Faction", "Class", "Race", "Health", "Power", "Power Modifier", "Dexterity", "Attack Type", "Attack", "Ranged Attack", "Strike Type", "Charge Requirement", "Abilities", "Image URL"],
           "Skill": ["Card Name", "Card Rarity", "Skill Level", "Mana Cost", "Trade Value", "Faction", "Compatible Classes", "Attack Type", "Attack", "Power Modifier", "Ranged Attack", "Strike Type", "Charge Requirement", "Abilities", "Image URL"],
@@ -630,7 +659,6 @@
           "Equipment": ["Card Name", "Card Rarity", "Equipment Type", "Equipment Subtype", "Gold Cost", "Attack Type", "Attack", "Power Modifier", "Ranged Attack", "Charge Requirement", "Defense Modifier", "Defense Die Roll Modifier", "Abilities", "Image URL"],
           "Synergy": ["Card Name", "Card Rarity", "Mana Cost", "Trade Value", "Faction", "Abilities", "Image URL"]
       };
-
       return (
         <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden w-full max-w-full">
           
@@ -727,6 +755,7 @@
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 w-full max-w-full">
                       {filteredPool.map(card => {
                         const cost = card["Mana Cost"] !== "" ? `${card["Mana Cost"]} Mana` : (card["Gold Cost"] !== "" ? `${card["Gold Cost"]} Gold` : null);
+                        const isOfficialCard = String(card["Is Official"]) === "true" || card.Creator === 'Gavin';
                         return (
                           <div key={card._id} className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 flex flex-col justify-between hover:border-slate-600 transition h-full shadow-sm min-w-0 max-w-full overflow-hidden break-words">
                             <div className="flex-1 flex flex-col min-w-0">
@@ -735,9 +764,14 @@
                                     <img src={`${formatImageUrl(card["Image URL"])}?v=${sessionBuster}`} alt={card["Card Name"] || card["Hero Name"]} className="max-w-full max-h-full object-contain drop-shadow-md rounded" loading="lazy" />
                                 </div>
                               )}
-                              <div className="flex justify-between items-start gap-1">
+                              <div className="flex justify-between items-start gap-1 mb-1">
                                 <span className="font-semibold text-sm leading-snug line-clamp-2">{card["Card Name"] || card["Hero Name"]}</span>
-                                <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 shrink-0">{card["Card Rarity"] || "Common"}</span>
+                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                    <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-700 text-slate-300">{card["Card Rarity"] || "Common"}</span>
+                                    <span className={`text-[8px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1 border ${isOfficialCard ? 'bg-slate-800 text-slate-400 border-slate-600' : 'bg-purple-900/60 text-purple-300 border-purple-700/50'}`}>
+                                        {isOfficialCard ? '🛡️ Official' : '🧪 Community'}
+                                    </span>
+                                </div>
                               </div>
                               <div className="text-xs text-amber-500/90 font-medium mt-0.5">{card._type} {cost && `• ${cost}`}</div>
                               <div className="text-xs text-slate-400 mt-2 space-y-0.5 flex-1 min-w-0 break-words">
@@ -1063,7 +1097,12 @@
                         <div className="p-3 md:p-5 min-w-0 break-words">
                             <div className="flex justify-between items-start mb-1.5 min-w-0 gap-2">
                                 <h3 className="text-base md:text-2xl font-bold text-slate-100 leading-tight min-w-0 break-words">{forgeData["Card Name"] || "Unnamed Card"}</h3>
-                                {(forgeData["Card Rarity"] || forgeCategory === 'Hero') && <span className="text-[10px] bg-slate-950 border border-slate-700 px-2 py-0.5 rounded text-slate-300 font-bold uppercase tracking-wider shrink-0">{forgeCategory === 'Hero' ? 'Hero' : forgeData["Card Rarity"]}</span>}
+                                <div className="flex flex-col items-end gap-1 shrink-0">
+                                    {(forgeData["Card Rarity"] || forgeCategory === 'Hero') && <span className="text-[10px] bg-slate-950 border border-slate-700 px-2 py-0.5 rounded text-slate-300 font-bold uppercase tracking-wider">{forgeCategory === 'Hero' ? 'Hero' : forgeData["Card Rarity"]}</span>}
+                                    <span className={`text-[8px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1 ${currentUser === 'Gavin' ? 'bg-slate-800 text-slate-400 border border-slate-600' : 'bg-purple-900/60 text-purple-300 border border-purple-700/50'}`}>
+                                        {currentUser === 'Gavin' ? '🛡️ Official' : '🧪 Community'}
+                                    </span>
+                                </div>
                             </div>
                             <div className="text-xs md:text-sm font-semibold text-amber-500 mb-3 truncate">{forgeCategory} {forgeData["Mana Cost"] !== undefined && forgeData["Mana Cost"] !== "" ? `• ${forgeData["Mana Cost"]} Mana` : ''}{forgeData["Gold Cost"] !== undefined && forgeData["Gold Cost"] !== "" ? `• ${forgeData["Gold Cost"]} Gold` : ''}</div>
                             
@@ -1099,7 +1138,7 @@
                     <button key={tab} onClick={() => setActiveTab(tab)} className={`shrink-0 px-3 py-1 md:px-4 md:py-1.5 rounded-md text-xs font-semibold transition ${activeTab === tab ? 'bg-amber-600 text-white shadow-sm' : 'text-slate-400 hover:bg-slate-800'}`}>{tab}</button>
                   ))}
                 </div>
-                <div className="flex-1 overflow-auto bg-slate-900/30 w-full relative">
+                <div className="flex-1 overflow-auto bg-slate-900/30 w-full relative min-w-0 block">
                   <table className="min-w-full text-left text-xs text-slate-300 border-collapse">
                     <thead className="bg-slate-800/95 text-slate-400 uppercase text-[10px] tracking-wider sticky top-0 z-20 shadow-sm border-b border-slate-700">
                       <tr>
@@ -1191,7 +1230,7 @@
           {/* DECK STATS MODAL */}
           {showStatsModal && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 md:p-4 z-50">
-              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-3xl p-0 max-h-[90dvh] flex flex-col shadow-2xl min-w-0">
+              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-5xl p-0 max-h-[90dvh] flex flex-col shadow-2xl min-w-0">
                 <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-800 flex justify-between items-start bg-slate-800/40 rounded-t-2xl shrink-0">
                   <div>
                     <h3 className="text-base md:text-xl font-bold text-slate-100">Deck Statistics</h3>
@@ -1200,8 +1239,8 @@
                   <button onClick={() => setShowStatsModal(false)} className="text-slate-400 hover:text-white font-bold text-xl p-1 leading-none rounded hover:bg-slate-700 transition">✕</button>
                 </div>
                 
-                <div className="p-4 md:p-6 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 w-full min-w-0">
-                    <div className="col-span-1 md:col-span-2 bg-slate-800/50 p-4 md:p-5 rounded-xl border border-slate-700/50 shadow-inner">
+                <div className="p-4 md:p-6 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 w-full min-w-0">
+                    <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-slate-800/50 p-4 md:p-5 rounded-xl border border-slate-700/50 shadow-inner">
                         <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-3 border-b border-slate-700 pb-1.5">Cost Sustainability</h4>
                         <div className="flex flex-col sm:flex-row gap-4 md:gap-6 items-center justify-around mb-3">
                             <div className="text-center">
@@ -1211,7 +1250,12 @@
                             <div className="text-lg text-slate-600 font-black">VS</div>
                             <div className="text-center">
                                 <div className="text-2xl md:text-3xl font-black text-blue-400">{deckAnalytics.avgManaCost}</div>
-                                <div className="text-xs text-slate-400 uppercase font-bold mt-1">Avg Cost per Card</div>
+                                <div className="text-xs text-slate-400 uppercase font-bold mt-1">Avg Mana Cost</div>
+                            </div>
+                            <div className="hidden sm:block text-lg text-slate-700 font-black">|</div>
+                            <div className="text-center">
+                                <div className="text-2xl md:text-3xl font-black text-amber-300">{deckAnalytics.avgGoldCost}</div>
+                                <div className="text-xs text-slate-400 uppercase font-bold mt-1">Avg Gold Cost</div>
                             </div>
                         </div>
                         <div className={`text-center font-semibold text-xs md:text-sm ${deckAnalytics.sustainColor} bg-slate-900 py-2.5 px-3 rounded-lg border border-slate-800/50 break-words`}>
@@ -1219,19 +1263,36 @@
                         </div>
                     </div>
 
+                    <div className="col-span-1 md:col-span-2 lg:col-span-3 bg-slate-800/50 p-4 md:p-5 rounded-xl border border-slate-700/50 shadow-inner">
+                        <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-3 border-b border-slate-700 pb-1.5">Deck Longevity (Breakthrough Defense)</h4>
+                        <div className="flex flex-col sm:flex-row gap-4 md:gap-6 items-center justify-around mb-3">
+                            <div className="text-center">
+                                <div className="text-2xl md:text-3xl font-black text-rose-400">{deckAnalytics.totalEHP}</div>
+                                <div className="text-xs text-slate-400 uppercase font-bold mt-1">Total Effective Health</div>
+                            </div>
+                        </div>
+                        <div className={`text-center font-semibold text-xs md:text-sm ${deckAnalytics.longevityColor} bg-slate-900 py-2.5 px-3 rounded-lg border border-slate-800/50 break-words`}>
+                            {deckAnalytics.longevityText}
+                        </div>
+                    </div>
+
                     <div className="bg-slate-800/30 p-4 md:p-5 rounded-xl border border-slate-800">
                         <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-3 border-b border-slate-700 pb-1.5">Ally Averages</h4>
                         <div className="space-y-3">
                             <div className="flex justify-between items-center">
-                                <span className="text-xs md:text-sm font-semibold text-slate-300">Average Power:</span>
+                                <span className="text-xs md:text-sm font-semibold text-slate-300">Power:</span>
                                 <span className="text-sm md:text-lg font-bold text-rose-400">{deckAnalytics.avgPower}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-xs md:text-sm font-semibold text-slate-300">Average Dexterity:</span>
+                                <span className="text-xs md:text-sm font-semibold text-slate-300">Ranged Attack:</span>
+                                <span className="text-sm md:text-lg font-bold text-purple-400">{deckAnalytics.avgRangedAttack}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs md:text-sm font-semibold text-slate-300">Dexterity:</span>
                                 <span className="text-sm md:text-lg font-bold text-emerald-400">{deckAnalytics.avgDex}</span>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-xs md:text-sm font-semibold text-slate-300">Average Health:</span>
+                                <span className="text-xs md:text-sm font-semibold text-slate-300">Health:</span>
                                 <span className="text-sm md:text-lg font-bold text-amber-400">{deckAnalytics.avgHealth}</span>
                             </div>
                         </div>
@@ -1240,17 +1301,17 @@
                     <div className="bg-slate-800/30 p-4 md:p-5 rounded-xl border border-slate-800 min-w-0">
                         <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-3 border-b border-slate-700 pb-1.5">Mana / Charge Curve</h4>
                         <div className="pt-1 min-w-0 w-full">
-                            {Object.entries(deckAnalytics.curve).map(([label, val]) => (
-                                <BarChartRow key={label} label={label} value={val} max={deckAnalytics.maxCurve} color="bg-blue-500" />
+                            {["0-1", "2", "3", "4", "5+"].map(label => (
+                                <BarChartRow key={label} label={label} value={deckAnalytics.curve[label]} max={deckAnalytics.maxCurve} color="bg-blue-500" />
                             ))}
                         </div>
                     </div>
 
-                    <div className="col-span-1 md:col-span-2 bg-slate-800/30 p-4 md:p-5 rounded-xl border border-slate-800 min-w-0">
+                    <div className="bg-slate-800/30 p-4 md:p-5 rounded-xl border border-slate-800 min-w-0">
                         <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-3 border-b border-slate-700 pb-1.5">Deck Composition</h4>
-                        <div className="pt-1 grid grid-cols-1 md:grid-cols-2 gap-x-8 min-w-0 w-full">
-                            {Object.entries(deckAnalytics.types).map(([label, val]) => (
-                                <BarChartRow key={label} label={label} value={val} max={deckAnalytics.maxType} color="bg-amber-500" />
+                        <div className="pt-1 min-w-0 w-full">
+                            {["Ally", "Skill", "Equipment", "Flash", "Synergy"].map(label => (
+                                <BarChartRow key={label} label={label} value={deckAnalytics.types[label]} max={deckAnalytics.maxType} color="bg-amber-500" />
                             ))}
                         </div>
                     </div>
@@ -1265,14 +1326,19 @@
               <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-5xl p-0 max-h-[95dvh] flex flex-col sm:flex-row shadow-2xl overflow-hidden min-w-0">
 				{modalCard["Image URL"] && (
 					<div className="w-full sm:w-1/2 h-[30dvh] sm:min-h-[600px] bg-black border-b sm:border-b-0 sm:border-r border-slate-800 flex items-center justify-center p-2 md:p-4 shrink-0">
-						<img src={`${formatImageUrl(modalCard["Image URL"])}?v=${Date.now()}`} className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-xl" />
+						<img src={`${formatImageUrl(modalCard["Image URL"])}?v=${sessionBuster}`} className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-xl" />
 					</div>
 				)}
                 
                 <div className="flex-1 flex flex-col min-w-0 max-h-[60dvh] sm:max-h-[90dvh]">
                   <div className="px-4 py-3 md:px-6 md:py-4 border-b border-slate-800 flex justify-between items-start bg-slate-800/40 shrink-0">
                     <div className="min-w-0">
-                      <h3 className="text-base md:text-xl font-bold text-slate-100 truncate">{modalCard["Card Name"] || modalCard["Hero Name"]}</h3>
+                      <div className="flex items-center gap-2">
+                          <h3 className="text-base md:text-xl font-bold text-slate-100 truncate">{modalCard["Card Name"] || modalCard["Hero Name"]}</h3>
+                          <span className={`text-[8px] uppercase font-bold px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0 border ${String(modalCard["Is Official"]) === "true" || modalCard.Creator === 'Gavin' ? 'bg-slate-800 text-slate-400 border-slate-600' : 'bg-purple-900/60 text-purple-300 border-purple-700/50'}`}>
+                              {String(modalCard["Is Official"]) === "true" || modalCard.Creator === 'Gavin' ? '🛡️ Official' : '🧪 Community'}
+                          </span>
+                      </div>
                       <p className="text-xs md:text-sm text-amber-500 font-semibold mt-0.5 truncate">{modalCard._type} • {modalCard["Card Rarity"] || "Common"}</p>
                     </div>
                     <button onClick={() => setModalCard(null)} className="text-slate-400 hover:text-white font-bold text-xl p-1 leading-none rounded hover:bg-slate-700 transition shrink-0 ml-2">✕</button>
