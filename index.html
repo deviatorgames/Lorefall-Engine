@@ -540,18 +540,25 @@
           const avgHealth = avgHealthNum.toFixed(1);
           const avgDex = allies.length ? (allies.reduce((sum, c) => sum + (parseFloat(c.Dexterity) || 0), 0) / allies.length).toFixed(1) : 0;
 
+          // Breakthrough Math (Assuming avg mid-to-late game strike power of 9)
+          const enemyStrike = 9;
+          const breakthroughPerStrike = Math.max(0, enemyStrike - avgHealthNum);
+          const damagePerTurnCycle = breakthroughPerStrike * 3;
+          const survivingTurnsNum = damagePerTurnCycle > 0 ? Math.floor(heroHealth / damagePerTurnCycle) : 99;
+          const survivingTurns = survivingTurnsNum === 99 ? "99+" : survivingTurnsNum;
+
           let longevityText = ""; let longevityColor = "";
-          if (avgHealthNum >= 8) {
-              longevityText = `Exceptional Vanguard buffer. Averaging ${avgHealth} health, your typical ally will fully absorb most heavy strikes, heavily protecting your hero's ${heroHealth} base health from breakthrough damage.`;
+          if (survivingTurnsNum >= 8) {
+              longevityText = `Exceptional protection. Your average vanguard buffer limits an average 9-damage strike to just ${breakthroughPerStrike.toFixed(1)} breakthrough damage. Your hero can survive roughly ${survivingTurns} turn cycles under heavy pressure.`;
               longevityColor = "text-emerald-400";
-          } else if (avgHealthNum >= 5) {
-              longevityText = `Solid Vanguard buffer. Averaging ${avgHealth} health, your allies can absorb decent strike damage. Expect moderate breakthrough against your hero's ${heroHealth} health from heavy hitters.`;
+          } else if (survivingTurnsNum >= 5) {
+              longevityText = `Moderate protection. Against a 9-damage strike, ${breakthroughPerStrike.toFixed(1)} damage bleeds through to your hero. You have enough health to survive around ${survivingTurns} turn cycles.`;
               longevityColor = "text-blue-400";
-          } else if (avgHealthNum >= 3) {
-              longevityText = `Risky Vanguard buffer. Your allies only average ${avgHealth} health. High breakthrough damage will frequently bleed through and quickly tax your hero's ${heroHealth} base health.`;
+          } else if (survivingTurnsNum >= 3) {
+              longevityText = `Risky protection. High breakthrough damage will bleed through your fragile vanguards, costing your hero ${damagePerTurnCycle.toFixed(1)} health per cycle. You only have ~${survivingTurns} turns to win.`;
               longevityColor = "text-amber-400";
           } else {
-              longevityText = `Highly vulnerable! Your allies average a fragile ${avgHealth} health. Nearly all attacks will result in massive breakthrough damage directly to your hero's ${heroHealth} base health.`;
+              longevityText = `Highly vulnerable! Your allies cannot withstand 9-damage strikes. Your hero will take a brutal ${damagePerTurnCycle.toFixed(1)} damage a turn, leaving you ${survivingTurns} turns or fewer to survive.`;
               longevityColor = "text-rose-400";
           }
 
@@ -571,7 +578,7 @@
               manaIntake, avgManaCost: avgManaCost.toFixed(1), avgGoldCost: avgGoldCost.toFixed(1), 
               sustainText, sustainColor, 
               avgPower, avgRangedAttack, avgHealth, avgDex, 
-              heroHealth, longevityText, longevityColor,
+              heroHealth, survivingTurns, longevityText, longevityColor,
               curve, maxCurve, types, maxType, cardCount: allDeckCards.length 
           };
       }, [deck, selectedHero]);
@@ -1274,6 +1281,11 @@
                             <div className="text-center">
                                 <div className="text-2xl md:text-3xl font-black text-amber-500">{deckAnalytics.avgHealth}</div>
                                 <div className="text-xs text-slate-400 uppercase font-bold mt-1">Avg Vanguard Buffer</div>
+                            </div>
+                            <div className="hidden sm:block text-lg text-slate-700 font-black">|</div>
+                            <div className="text-center">
+                                <div className="text-2xl md:text-3xl font-black text-emerald-400">{deckAnalytics.survivingTurns}</div>
+                                <div className="text-xs text-slate-400 uppercase font-bold mt-1">Est. Surviving Turns</div>
                             </div>
                         </div>
                         <div className={`text-center font-semibold text-xs md:text-sm ${deckAnalytics.longevityColor} bg-slate-900 py-2.5 px-3 rounded-lg border border-slate-800/50 break-words`}>
