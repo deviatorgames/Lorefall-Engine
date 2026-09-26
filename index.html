@@ -536,22 +536,22 @@
           const totalAllyHealth = allies.reduce((sum, c) => sum + (parseFloat(c.Health) || 0), 0);
           const avgPower = allies.length ? (allies.reduce((sum, c) => sum + (parseFloat(c.Power) || 0), 0) / allies.length).toFixed(1) : 0;
           const avgRangedAttack = allies.length ? (allies.reduce((sum, c) => sum + (parseFloat(c["Ranged Attack"]) || 0), 0) / allies.length).toFixed(1) : 0;
-          const avgHealth = allies.length ? (totalAllyHealth / allies.length).toFixed(1) : 0;
+          const avgHealthNum = allies.length ? (totalAllyHealth / allies.length) : 0;
+          const avgHealth = avgHealthNum.toFixed(1);
           const avgDex = allies.length ? (allies.reduce((sum, c) => sum + (parseFloat(c.Dexterity) || 0), 0) / allies.length).toFixed(1) : 0;
 
-          const totalEHP = heroHealth + totalAllyHealth;
           let longevityText = ""; let longevityColor = "";
-          if (totalEHP >= 120) {
-              longevityText = `Exceptional longevity. With ${totalAllyHealth} health across your allies cushioning your hero's ${heroHealth} base health, your deck can absorb massive breakthrough damage.`;
+          if (avgHealthNum >= 8) {
+              longevityText = `Exceptional Vanguard buffer. Averaging ${avgHealth} health, your typical ally will fully absorb most heavy strikes, heavily protecting your hero's ${heroHealth} base health from breakthrough damage.`;
               longevityColor = "text-emerald-400";
-          } else if (totalEHP >= 80) {
-              longevityText = `Solid longevity. Your allies provide ${totalAllyHealth} health to shield your hero. You have a healthy buffer against breakthrough attacks.`;
+          } else if (avgHealthNum >= 5) {
+              longevityText = `Solid Vanguard buffer. Averaging ${avgHealth} health, your allies can absorb decent strike damage. Expect moderate breakthrough against your hero's ${heroHealth} health from heavy hitters.`;
               longevityColor = "text-blue-400";
-          } else if (totalEHP >= 50) {
-              longevityText = `Moderate longevity. Your combined health pool is decent, but heavy breakthrough damage could threaten your hero quickly.`;
+          } else if (avgHealthNum >= 3) {
+              longevityText = `Risky Vanguard buffer. Your allies only average ${avgHealth} health. High breakthrough damage will frequently bleed through and quickly tax your hero's ${heroHealth} base health.`;
               longevityColor = "text-amber-400";
           } else {
-              longevityText = `Vulnerable. With only ${totalAllyHealth} total ally health, your hero is highly exposed to breakthrough damage.`;
+              longevityText = `Highly vulnerable! Your allies average a fragile ${avgHealth} health. Nearly all attacks will result in massive breakthrough damage directly to your hero's ${heroHealth} base health.`;
               longevityColor = "text-rose-400";
           }
 
@@ -571,7 +571,7 @@
               manaIntake, avgManaCost: avgManaCost.toFixed(1), avgGoldCost: avgGoldCost.toFixed(1), 
               sustainText, sustainColor, 
               avgPower, avgRangedAttack, avgHealth, avgDex, 
-              totalEHP, longevityText, longevityColor,
+              heroHealth, longevityText, longevityColor,
               curve, maxCurve, types, maxType, cardCount: allDeckCards.length 
           };
       }, [deck, selectedHero]);
@@ -1267,8 +1267,13 @@
                         <h4 className="text-xs uppercase font-bold text-slate-400 tracking-widest mb-3 border-b border-slate-700 pb-1.5">Deck Longevity (Breakthrough Defense)</h4>
                         <div className="flex flex-col sm:flex-row gap-4 md:gap-6 items-center justify-around mb-3">
                             <div className="text-center">
-                                <div className="text-2xl md:text-3xl font-black text-rose-400">{deckAnalytics.totalEHP}</div>
-                                <div className="text-xs text-slate-400 uppercase font-bold mt-1">Total Effective Health</div>
+                                <div className="text-2xl md:text-3xl font-black text-rose-400">{deckAnalytics.heroHealth}</div>
+                                <div className="text-xs text-slate-400 uppercase font-bold mt-1">Hero Base Health</div>
+                            </div>
+                            <div className="text-lg text-slate-600 font-black">+</div>
+                            <div className="text-center">
+                                <div className="text-2xl md:text-3xl font-black text-amber-500">{deckAnalytics.avgHealth}</div>
+                                <div className="text-xs text-slate-400 uppercase font-bold mt-1">Avg Vanguard Buffer</div>
                             </div>
                         </div>
                         <div className={`text-center font-semibold text-xs md:text-sm ${deckAnalytics.longevityColor} bg-slate-900 py-2.5 px-3 rounded-lg border border-slate-800/50 break-words`}>
