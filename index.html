@@ -55,6 +55,7 @@
       "Mana Cost": { type: "number" }, "Mana": { type: "number" }, "Health": { type: "number" }, "Dexterity": { type: "number" },
       "Power": { type: "number" }, "Power Modifier": { type: "number" }, "Ranged Attack": { type: "number" }, "Charge Requirement": { type: "number" }, "Gold Cost": { type: "number" },
       "Trade Value": { type: "number" }, "Defense Modifier": { type: "number" }, "Defense Die Roll Modifier": { type: "number" },
+      "Is Official": { type: "select", options: ["", "true", "false"] },
       "Abilities": { type: "textarea" }, "Status Notes": { type: "textarea" }
     };
 
@@ -104,6 +105,9 @@
     );
 
     function App() {
+      // Session-wide cache-buster timestamp (prevents infinite network spam when typing)
+      const sessionBuster = useMemo(() => Date.now(), []);
+
       const [view, setView] = useState('deck-builder');
       const [activeTab, setActiveTab] = useState('Hero');
       const [modalCard, setModalCard] = useState(null);
@@ -117,6 +121,7 @@
       const [filterStatType, setFilterStatType] = useState('');
       const [filterStatValue, setFilterStatValue] = useState('');
       const [filterFaction, setFilterFaction] = useState('All');
+      const [includeCommunity, setIncludeCommunity] = useState(false);
       const [editMode, setEditMode] = useState(false);
       const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
       
@@ -130,19 +135,16 @@
       const DEFAULT_SUPABASE_URL = "https://lbqhvrkyfewpevaorepa.supabase.co";
       const DEFAULT_SUPABASE_KEY = "sb_publishable_avINSyJpnCibxy2zhjQNig_A2uaTYvh";
 
-      const [supabaseUrl, setSupabaseUrl] = useState(() => localStorage.getItem('lorefall_sb_url') || DEFAULT_SUPABASE_URL);
-      const [supabaseKey, setSupabaseKey] = useState(() => localStorage.getItem('lorefall_sb_key') || DEFAULT_SUPABASE_KEY);
-      const [showCloudModal, setShowCloudModal] = useState(false);
       const [isSyncing, setIsSyncing] = useState(false);
 
       const supabase = useMemo(() => {
-        if (supabaseUrl && supabaseKey && window.supabase) {
+        if (DEFAULT_SUPABASE_URL && DEFAULT_SUPABASE_KEY && window.supabase) {
           try {
-            return window.supabase.createClient(supabaseUrl, supabaseKey);
+            return window.supabase.createClient(DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY);
           } catch(e) { return null; }
         }
         return null;
-      }, [supabaseUrl, supabaseKey]);
+      }, []);
 
       const [savedDecks, setSavedDecks] = useState(() => {
         const saved = localStorage.getItem('lorefall_saved_decks_v29');
@@ -192,15 +194,6 @@
       useEffect(() => {
         if (supabase) pullCloudData();
       }, [supabase]);
-
-      const handleSaveCloudConfig = (url, key) => {
-        setSupabaseUrl(url.trim());
-        setSupabaseKey(key.trim());
-        localStorage.setItem('lorefall_sb_url', url.trim());
-        localStorage.setItem('lorefall_sb_key', key.trim());
-        setShowCloudModal(false);
-        triggerToast("Connecting to Supabase...", false);
-      };
 
       const handleAuthSubmit = async (e) => {
           e.preventDefault();
@@ -273,7 +266,7 @@
         Object.entries(INITIAL_DATABASE).forEach(([type, list]) => {
           list.forEach((item, idx) => {
             const name = item["Card Name"] || item["Hero Name"];
-            flat.push({ ...item, _type: type, _id: `${type}_${name || idx}` });
+            flat.push({ ...item, _type: type, _id: `${type}_${name || idx}`, "Is Official": "true" });
           });
         });
         return flat;
@@ -380,6 +373,7 @@
 
       const [forgeCategory, setForgeCategory] = useState('Ally');
       const [forgeData, setForgeData] = useState({});
+      const [lastForgeTime, setLastForgeTime] = useState(0);
       
       const handleForgeChange = (key, val) => {
           if (FIELD_TYPES[key]?.type === 'number' && val !== "") val = parseFloat(val);
@@ -389,16 +383,30 @@
       const handleForgeSubmit = async (e) => {
           e.preventDefault();
           if (!currentUser) return triggerToast("You must be logged in to forge a card!", true);
+
+          // Rate Limiting & Caps
+          const now = Date.now();
+          if (currentUser !== 'Gavin' && now - lastForgeTime < 10000) {
+              const waitSec = Math.ceil((10000 - (now - lastForgeTime)) / 1000);
+              return triggerToast(`Please wait ${waitSec}s before forging another card.`, true);
+          }
+
+          const userCardCount = cards.filter(c => c.Creator === currentUser && String(c["Is Official"]) !== "true").length;
+          if (currentUser !== 'Gavin' && userCardCount >= 100) {
+              return triggerToast("Card limit reached (100/100 cards). Delete old cards to forge new ones.", true);
+          }
+
           const nameField = 'Card Name';
           if (!forgeData[nameField]) return triggerToast("Card needs a name!", true);
           
-          const cardId = `${forgeCategory}_${forgeData[nameField]}_${Date.now()}`;
+          const cardId = `${forgeCategory}_${forgeData[nameField].replace(/\s+/g, '_')}_${Date.now()}`;
           const newCard = {
               ...forgeData,
               _type: forgeCategory,
               _id: cardId,
               "Creator": currentUser,
-              "Status": "New"
+              "Status": "New",
+              "Is Official": currentUser === 'Gavin' ? "true" : "false"
           };
           if (forgeCategory === 'Hero') {
               newCard["Card Rarity"] = "Hero";
@@ -406,6 +414,7 @@
           delete newCard["Status Notes"];
           
           setCards(prev => [...prev, newCard]);
+          setLastForgeTime(now);
           triggerToast(`${forgeData[nameField]} successfully forged!`, false);
           setForgeData({});
 
@@ -540,6 +549,12 @@
 
       const filteredPool = useMemo(() => {
         let pool = cards.filter(c => c._type !== 'Hero');
+        
+        // Filter out community cards by default
+        if (!includeCommunity) {
+            pool = pool.filter(c => String(c["Is Official"]) === "true" || c.Creator === 'Gavin');
+        }
+
         if (filterType !== 'All') pool = pool.filter(c => c._type === filterType);
         if (filterCost !== '') pool = pool.filter(c => String(c["Mana Cost"]) === filterCost || String(c["Gold Cost"]) === filterCost);
         if (filterFaction !== 'All') pool = pool.filter(c => parseCommaList(c.Faction).includes(filterFaction.toLowerCase()));
@@ -554,7 +569,7 @@
           });
         }
         return pool;
-      }, [cards, filterType, filterCost, filterFaction, filterStatType, filterStatValue, searchTerm]);
+      }, [cards, includeCommunity, filterType, filterCost, filterFaction, filterStatType, filterStatValue, searchTerm]);
 
       const tabCards = useMemo(() => activeTab === 'All' ? cards : cards.filter(c => c._type === activeTab), [cards, activeTab]);
       
@@ -582,7 +597,6 @@
         tabCards.forEach(c => { Object.keys(c).forEach(k => { if (!k.startsWith('_')) cols.add(k); }); });
         let colArray = Array.from(cols);
         
-        // Force columns into a strict, logical layout regardless of JSONB scrambling
         const MASTER_ORDER = [
           "Card Name", "Card Rarity", "Status", "Skill Level", "Flash Subtype", "Equipment Type", "Equipment Subtype",
           "Mana Cost", "Mana", "Gold Cost", "Trade Value", 
@@ -590,7 +604,7 @@
           "Health", "Power", "Power Modifier", "Dexterity", 
           "Attack Type", "Attack", "Ranged Attack", "Strike Type", "Charge Requirement", 
           "Defense Modifier", "Defense Die Roll Modifier", 
-          "Abilities", "Creator", "Status Notes", "Image URL"
+          "Abilities", "Creator", "Status Notes", "Is Official", "Image URL"
         ];
 
         colArray.sort((a, b) => {
@@ -603,12 +617,12 @@
         });
 
         if (!editMode) {
-            colArray = colArray.filter(col => col !== "Image URL");
+            colArray = colArray.filter(col => col !== "Image URL" && col !== "Is Official");
         }
         return colArray;
-	}, [tabCards, editMode]);
+      }, [tabCards, editMode]);
 
-		const FORGE_LAYOUTS = {
+      const FORGE_LAYOUTS = {
           "Hero": ["Card Name", "Faction", "Class", "Race", "Mana", "Health", "Power", "Dexterity", "Abilities", "Image URL"],
           "Ally": ["Card Name", "Card Rarity", "Mana Cost", "Faction", "Class", "Race", "Health", "Power", "Power Modifier", "Dexterity", "Attack Type", "Attack", "Ranged Attack", "Strike Type", "Charge Requirement", "Abilities", "Image URL"],
           "Skill": ["Card Name", "Card Rarity", "Skill Level", "Mana Cost", "Trade Value", "Faction", "Compatible Classes", "Attack Type", "Attack", "Power Modifier", "Ranged Attack", "Strike Type", "Charge Requirement", "Abilities", "Image URL"],
@@ -616,6 +630,7 @@
           "Equipment": ["Card Name", "Card Rarity", "Equipment Type", "Equipment Subtype", "Gold Cost", "Attack Type", "Attack", "Power Modifier", "Ranged Attack", "Charge Requirement", "Defense Modifier", "Defense Die Roll Modifier", "Abilities", "Image URL"],
           "Synergy": ["Card Name", "Card Rarity", "Mana Cost", "Trade Value", "Faction", "Abilities", "Image URL"]
       };
+
       return (
         <div className="flex flex-col h-full bg-slate-950 text-slate-100 overflow-hidden w-full max-w-full">
           
@@ -628,10 +643,6 @@
               </div>
             </div>
             <div className="flex items-center gap-2 md:gap-3 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-hide max-w-full">
-              <button onClick={() => setShowCloudModal(true)} className={`shrink-0 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs font-semibold transition border flex items-center gap-1 ${supabase ? 'bg-sky-950/60 border-sky-800 text-sky-400' : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-slate-200'}`}>
-                <span>☁️</span>
-                <span>{supabase ? (isSyncing ? 'Syncing...' : 'Cloud Connected') : 'Setup Cloud DB'}</span>
-              </button>
               {currentUser ? (
                 <button onClick={handleLogout} className="shrink-0 px-2.5 py-1 md:px-3 md:py-1.5 rounded-md text-xs font-semibold transition border bg-slate-800 text-amber-400 border-slate-700 hover:text-rose-400 flex items-center gap-1" title="Click to logout">
                   <span>👤</span><span>{currentUser} (Log out)</span>
@@ -702,6 +713,9 @@
                           </select>
                           <input type="number" placeholder="Val" value={filterStatValue} onChange={(e) => setFilterStatValue(e.target.value)} className="w-[45px] bg-transparent text-xs text-slate-200 focus:outline-none py-1 px-1.5 placeholder-slate-500" />
                       </div>
+                      <button onClick={() => setIncludeCommunity(!includeCommunity)} className={`shrink-0 px-2 py-1 rounded text-[10px] md:text-xs font-bold uppercase tracking-wider transition border ${includeCommunity ? 'bg-purple-950/80 border-purple-600 text-purple-300 shadow-[0_0_10px_rgba(147,51,234,0.3)]' : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200'}`}>
+                          {includeCommunity ? '🧪 Community: ON' : '🛡️ Official Only'}
+                      </button>
                       {(searchTerm || filterCost !== '' || filterType !== 'All' || filterFaction !== 'All' || filterStatType !== '' || filterStatValue !== '') && (
                         <button onClick={() => { setSearchTerm(''); setFilterCost(''); setFilterType('All'); setFilterFaction('All'); setFilterStatType(''); setFilterStatValue(''); }} className="shrink-0 text-[10px] uppercase font-bold text-amber-500 hover:text-amber-400 tracking-wider ml-1">Clear</button>
                       )}
@@ -718,7 +732,7 @@
                             <div className="flex-1 flex flex-col min-w-0">
                               {card["Image URL"] && (
                                 <div className="w-full aspect-[4/3] sm:h-44 md:h-48 mb-2.5 rounded-lg bg-black/60 border border-slate-700/50 flex items-center justify-center p-2 shrink-0">
-                                    <img src={formatImageUrl(card["Image URL"])} alt={card["Card Name"] || card["Hero Name"]} className="max-w-full max-h-full object-contain drop-shadow-md rounded" loading="lazy" />
+                                    <img src={`${formatImageUrl(card["Image URL"])}?v=${sessionBuster}`} alt={card["Card Name"] || card["Hero Name"]} className="max-w-full max-h-full object-contain drop-shadow-md rounded" loading="lazy" />
                                 </div>
                               )}
                               <div className="flex justify-between items-start gap-1">
@@ -988,7 +1002,11 @@
                                     </select>
                                 );
                             } else if (spec.type === 'multiselect') {
-                                const selectedArr = parseCommaList(val).map(s => spec.options.find(o => o.toLowerCase() === s) || s);
+                                let currentOptions = spec.options;
+                                if (forgeCategory === 'Hero' && key === 'Faction') {
+                                    currentOptions = currentOptions.filter(o => o.toLowerCase() !== 'factionless');
+                                }
+                                const selectedArr = parseCommaList(val).map(s => currentOptions.find(o => o.toLowerCase() === s) || s);
                                 inputElement = (
                                     <select multiple size={4} value={selectedArr} onChange={e => { 
                                         const s = Array.from(e.target.selectedOptions, opt => opt.value); 
@@ -1001,7 +1019,7 @@
                                         }
                                         handleForgeChange(key, s.join(", ")); 
                                     }} className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 h-[90px] min-w-0">
-                                        {spec.options.map(o => <option key={o} value={o}>{o}</option>)}
+                                        {currentOptions.map(o => <option key={o} value={o}>{o}</option>)}
                                     </select>
                                 );
                             } else if (spec.type === 'number') {
@@ -1035,7 +1053,7 @@
                     <div className="w-full max-w-xs md:max-w-sm relative z-10 bg-slate-800 border border-slate-600 rounded-2xl shadow-xl flex flex-col overflow-hidden min-w-0">
                         {forgeData["Image URL"] ? (
                             <div className="w-full h-32 md:h-64 bg-black flex items-center justify-center border-b border-slate-700 p-2">
-                                <img src={formatImageUrl(forgeData["Image URL"])} className="max-w-full max-h-full object-contain drop-shadow-md rounded-lg" />
+                                <img src={`${formatImageUrl(forgeData["Image URL"])}?v=${sessionBuster}`} className="max-w-full max-h-full object-contain drop-shadow-md rounded-lg" />
                             </div>
                         ) : (
                             <div className="w-full h-20 md:h-44 bg-slate-900 flex items-center justify-center border-b border-slate-700 text-slate-600 font-bold text-xs uppercase tracking-widest">
@@ -1132,7 +1150,11 @@
                                   if (spec.type === 'textarea') return <textarea value={v} onChange={e => handleInlineChange(c._id, col, e.target.value)} className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded px-2 py-1 text-xs text-slate-200 min-h-[50px] transition-colors" />;
                                   if (spec.type === 'select') return <select value={v} onChange={e => handleInlineChange(c._id, col, e.target.value)} className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded px-2 py-1 text-xs text-slate-200 transition-colors">{spec.options.map(o => <option key={o} value={o}>{o === "" ? "None" : o}</option>)}</select>;
                                   if (spec.type === 'multiselect') {
-                                     const selectedArr = parseCommaList(v).map(s => { const match = spec.options.find(o => o.toLowerCase() === s); return match || s; });
+                                     let currentOptions = spec.options;
+                                     if (c._type === 'Hero' && col === 'Faction') {
+                                         currentOptions = currentOptions.filter(o => o.toLowerCase() !== 'factionless');
+                                     }
+                                     const selectedArr = parseCommaList(v).map(s => { const match = currentOptions.find(o => o.toLowerCase() === s); return match || s; });
                                      return (
                                        <select multiple size={4} value={selectedArr} onChange={e => { 
                                            const s = Array.from(e.target.selectedOptions, opt => opt.value); 
@@ -1145,7 +1167,7 @@
                                            }
                                            handleInlineChange(c._id, col, s.join(", ")); 
                                        }} className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded px-2 py-1 text-xs text-slate-200 h-[68px] transition-colors">
-                                          {spec.options.map(o => <option key={o} value={o}>{o}</option>)}
+                                          {currentOptions.map(o => <option key={o} value={o}>{o}</option>)}
                                        </select>
                                      );
                                   }
@@ -1243,7 +1265,7 @@
               <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-5xl p-0 max-h-[95dvh] flex flex-col sm:flex-row shadow-2xl overflow-hidden min-w-0">
 				{modalCard["Image URL"] && (
 					<div className="w-full sm:w-1/2 h-[30dvh] sm:min-h-[600px] bg-black border-b sm:border-b-0 sm:border-r border-slate-800 flex items-center justify-center p-2 md:p-4 shrink-0">
-						<img src={formatImageUrl(modalCard["Image URL"])} className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-xl" />
+						<img src={`${formatImageUrl(modalCard["Image URL"])}?v=${Date.now()}`} className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-xl" />
 					</div>
 				)}
                 
@@ -1307,36 +1329,6 @@
                     Sign In / Register
                   </button>
                 </form>
-              </div>
-            </div>
-          )}
-
-          {/* CLOUD CONFIG MODAL */}
-          {showCloudModal && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[80]">
-              <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-5 shadow-2xl min-w-0">
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">☁️ Supabase Cloud Config</h3>
-                  <button onClick={() => setShowCloudModal(false)} className="text-slate-400 hover:text-white font-bold text-lg">✕</button>
-                </div>
-                <p className="text-xs text-slate-400 mb-3 leading-relaxed">
-                  Enter your free Supabase credentials to enable global real-time synchronization of cards, decks, and user profiles across all devices.
-                </p>
-                <div className="space-y-3 w-full">
-                  <div>
-                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Project URL</label>
-                    <input type="text" id="sb_url_input" defaultValue={supabaseUrl} placeholder="https://xyzcompany.supabase.co" className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Anon / Public Key</label>
-                    <input type="password" id="sb_key_input" defaultValue={supabaseKey} placeholder="eyJh..." className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500" />
-                  </div>
-                  <button onClick={() => {
-                    const u = document.getElementById('sb_url_input').value;
-                    const k = document.getElementById('sb_key_input').value;
-                    handleSaveCloudConfig(u, k);
-                  }} className="w-full py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition shadow-md">Connect & Sync</button>
-                </div>
               </div>
             </div>
           )}
